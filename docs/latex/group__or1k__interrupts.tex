@@ -1,0 +1,192 @@
+\hypertarget{group__or1k__interrupts}{\section{O\-R1\-K interrupt control}
+\label{group__or1k__interrupts}\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}}
+}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void($\ast$ \hyperlink{group__or1k__interrupts_ga7f64e8553d4a6a80a70c9d7626d8469f}{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr} )(void $\ast$data)
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{group__or1k__interrupts_gae8d1315878d7641cf6840d16a73e94a5}{or1k\-\_\-interrupt\-\_\-handler\-\_\-add} (uint32\-\_\-t line, \hyperlink{group__or1k__interrupts_ga7f64e8553d4a6a80a70c9d7626d8469f}{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr} handler, void $\ast$data)
+\item 
+void \hyperlink{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}{or1k\-\_\-interrupt\-\_\-enable} (int line)
+\item 
+void \hyperlink{group__or1k__interrupts_ga0f0f3a574dde52175eabace4aaaec34a}{or1k\-\_\-interrupt\-\_\-disable} (int line)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable} (void)
+\item 
+void \hyperlink{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{or1k\-\_\-interrupts\-\_\-enable} (void)
+\item 
+void \hyperlink{group__or1k__interrupts_ga678519bbf7a7fe2efe99f1b4c7a8da18}{or1k\-\_\-interrupts\-\_\-restore} (uint32\-\_\-t status)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__interrupts_ga2bf6620d852e42c7a04aa791ea32557f}{or1k\-\_\-critical\-\_\-start} ()
+\item 
+void \hyperlink{group__or1k__interrupts_ga470956270188c5ebf719a2cc499c82b7}{or1k\-\_\-critical\-\_\-end} (uint32\-\_\-t restore)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Interrupt control function prototypes 
+
+\subsection{Typedef Documentation}
+\hypertarget{group__or1k__interrupts_ga7f64e8553d4a6a80a70c9d7626d8469f}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr@{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr}}
+\index{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr@{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr)(void $\ast$data)}}\label{group__or1k__interrupts_ga7f64e8553d4a6a80a70c9d7626d8469f}
+Function pointer to interrupt handler functions 
+
+\subsection{Function Documentation}
+\hypertarget{group__or1k__interrupts_ga470956270188c5ebf719a2cc499c82b7}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-critical\-\_\-end@{or1k\-\_\-critical\-\_\-end}}
+\index{or1k\-\_\-critical\-\_\-end@{or1k\-\_\-critical\-\_\-end}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-critical\-\_\-end}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-critical\-\_\-end (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{restore}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga470956270188c5ebf719a2cc499c82b7}
+Enable timer and interrupt exception
+
+Restore the timer and interrupt exception enable. The restore value is the return value from \hyperlink{group__or1k__interrupts_ga2bf6620d852e42c7a04aa791ea32557f}{or1k\-\_\-critical\-\_\-start()}.
+
+
+\begin{DoxyParams}{Parameters}
+{\em restore} & Interrupt and timer exception enable restore value \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__interrupts_ga2bf6620d852e42c7a04aa791ea32557f}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-critical\-\_\-start@{or1k\-\_\-critical\-\_\-start}}
+\index{or1k\-\_\-critical\-\_\-start@{or1k\-\_\-critical\-\_\-start}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-critical\-\_\-start}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-critical\-\_\-start (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga2bf6620d852e42c7a04aa791ea32557f}
+Disable timer and interrupt exception
+
+This function disables the timer and interrupt exception to guard critical sections. It returns the status of the enable bits before the critical section, that is restored with \hyperlink{group__or1k__interrupts_ga470956270188c5ebf719a2cc499c82b7}{or1k\-\_\-critical\-\_\-end()}.
+
+Example\-: 
+\begin{DoxyCode}
+...
+uint32\_t status = \hyperlink{group__or1k__interrupts_ga2bf6620d852e42c7a04aa791ea32557f}{or1k\_critical\_start}();
+\textcolor{comment}{// critical part}
+\hyperlink{group__or1k__interrupts_ga470956270188c5ebf719a2cc499c82b7}{or1k\_critical\_end}(status);
+...
+\end{DoxyCode}
+
+
+\begin{DoxyReturn}{Returns}
+Status of timer and interrupt exception at time of call 
+\end{DoxyReturn}
+\hypertarget{group__or1k__interrupts_ga0f0f3a574dde52175eabace4aaaec34a}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupt\-\_\-disable@{or1k\-\_\-interrupt\-\_\-disable}}
+\index{or1k\-\_\-interrupt\-\_\-disable@{or1k\-\_\-interrupt\-\_\-disable}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupt\-\_\-disable}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-interrupt\-\_\-disable (
+\begin{DoxyParamCaption}
+\item[{int}]{line}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga0f0f3a574dde52175eabace4aaaec34a}
+Disable interrupts from a given line
+
+Mask given interrupt line. It can be unmasked using \hyperlink{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}{or1k\-\_\-interrupt\-\_\-enable()}.
+
+
+\begin{DoxyParams}{Parameters}
+{\em line} & Interrupt line to disable \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupt\-\_\-enable@{or1k\-\_\-interrupt\-\_\-enable}}
+\index{or1k\-\_\-interrupt\-\_\-enable@{or1k\-\_\-interrupt\-\_\-enable}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupt\-\_\-enable}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-interrupt\-\_\-enable (
+\begin{DoxyParamCaption}
+\item[{int}]{line}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}
+Enable interrupts from a given line
+
+Unmask the given interrupt line. It is also important to enable interrupts in general, e.\-g., using \hyperlink{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{or1k\-\_\-interrupts\-\_\-enable()}.
+
+
+\begin{DoxyParams}{Parameters}
+{\em line} & Interrupt line to enable \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__interrupts_gae8d1315878d7641cf6840d16a73e94a5}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupt\-\_\-handler\-\_\-add@{or1k\-\_\-interrupt\-\_\-handler\-\_\-add}}
+\index{or1k\-\_\-interrupt\-\_\-handler\-\_\-add@{or1k\-\_\-interrupt\-\_\-handler\-\_\-add}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupt\-\_\-handler\-\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-interrupt\-\_\-handler\-\_\-add (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{line, }
+\item[{{\bf or1k\-\_\-interrupt\-\_\-handler\-\_\-fptr}}]{handler, }
+\item[{void $\ast$}]{data}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_gae8d1315878d7641cf6840d16a73e94a5}
+Add interrupt handler for interrupt line
+
+Registers a callback function for a certain interrupt line.
+
+
+\begin{DoxyParams}{Parameters}
+{\em line} & Interrupt line/id to register a handler for \\
+\hline
+{\em handler} & Handler to register \\
+\hline
+{\em data} & Data value passed to the handler \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupts\-\_\-disable@{or1k\-\_\-interrupts\-\_\-disable}}
+\index{or1k\-\_\-interrupts\-\_\-disable@{or1k\-\_\-interrupts\-\_\-disable}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupts\-\_\-disable}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-interrupts\-\_\-disable (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}
+Disable interrupts
+
+This disables the interrupt exception. This is sufficient to disable all interrupts. It does not change the mask register (which is modified using \hyperlink{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}{or1k\-\_\-interrupt\-\_\-enable()} and \hyperlink{group__or1k__interrupts_ga0f0f3a574dde52175eabace4aaaec34a}{or1k\-\_\-interrupt\-\_\-disable()}).
+
+The interrupt exception can be enabled using \hyperlink{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{or1k\-\_\-interrupts\-\_\-enable()}.
+
+Finally, the status of the interrupt exception enable flag is returned by this function. That allows to call this function even if interrupts are already disabled. To restore the value of the interrupt exception enable flag, use the \hyperlink{group__or1k__interrupts_ga678519bbf7a7fe2efe99f1b4c7a8da18}{or1k\-\_\-interrupts\-\_\-restore()} function. That way you avoid to accidentally enable interrupts. Example\-:
+
+
+\begin{DoxyCode}
+\textcolor{keywordtype}{void} f() \{
+  uint32\_t interrupt\_status = \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\_interrupts\_disable}();
+  \textcolor{comment}{// do something}
+  \hyperlink{group__or1k__interrupts_ga678519bbf7a7fe2efe99f1b4c7a8da18}{or1k\_interrupts\_restore}(status);
+\}
+\end{DoxyCode}
+
+
+This code will preserve the original status of the interrupt enable flag.
+
+\begin{DoxyReturn}{Returns}
+Interrupt exception enable flag before call 
+\end{DoxyReturn}
+\hypertarget{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupts\-\_\-enable@{or1k\-\_\-interrupts\-\_\-enable}}
+\index{or1k\-\_\-interrupts\-\_\-enable@{or1k\-\_\-interrupts\-\_\-enable}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupts\-\_\-enable}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-interrupts\-\_\-enable (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}
+Enable interrupt exception
+
+Enable the interrupt exception. Beside the interrupt exception, it is also necessary to enable the individual interrupt lines using \hyperlink{group__or1k__interrupts_gace2e505048c2d8a77521e4bf5bc03967}{or1k\-\_\-interrupt\-\_\-enable()}.
+
+You should avoid using this function together with \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable()} to guard atomic blocks as it unconditionally enables the interrupt exception (see documentation of \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable()}). \hypertarget{group__or1k__interrupts_ga678519bbf7a7fe2efe99f1b4c7a8da18}{\index{O\-R1\-K interrupt control@{O\-R1\-K interrupt control}!or1k\-\_\-interrupts\-\_\-restore@{or1k\-\_\-interrupts\-\_\-restore}}
+\index{or1k\-\_\-interrupts\-\_\-restore@{or1k\-\_\-interrupts\-\_\-restore}!OR1K interrupt control@{O\-R1\-K interrupt control}}
+\subsubsection[{or1k\-\_\-interrupts\-\_\-restore}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-interrupts\-\_\-restore (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{status}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__interrupts_ga678519bbf7a7fe2efe99f1b4c7a8da18}
+Restore interrupt exception enable flag
+
+This function restores the given status to the processor. or1k\-\_\-interrupts\-\_\-restore(0) is identical to \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable()} and or1k\-\_\-interrupts\-\_\-restore(\-S\-P\-R\-\_\-\-S\-R\-\_\-\-I\-E\-E) is identical to \hyperlink{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{or1k\-\_\-interrupts\-\_\-enable()}.
+
+It is for example used to guard an atomic block and restore the original status of the interrupt exception enable flag as returned by \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable()}. See the documentation of \hyperlink{group__or1k__interrupts_ga6596faf65911ecbcc9881937971946f3}{or1k\-\_\-interrupts\-\_\-disable()} for a usage example.
+
+
+\begin{DoxyParams}{Parameters}
+{\em status} & Status of the flag to restore \\
+\hline
+\end{DoxyParams}

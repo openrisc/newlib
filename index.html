@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>or1k-elf toolchain (newlib port for OpenRISC)</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>or1k-elf toolchain (Newlib port for OpenRISC)</h1>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/openrisc/newlib" class="button fork"><strong>View On GitHub</strong></a>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+	<ul>
+	<li><a href="index.html">Home</a></li>
+	<li><a href="tutorial.html">Tutorial</a></li>
+	<li><a href="building.html">Build Instructions</a></li>
+	<li><a href="multicore.html">Multicore Toolchain</a></li>
+	</ul>
+      </nav>
+      <section>
+
+<p>The or1k-elf toolchain is a baremetal compiler, assembler, etc.
+toolchain for the <a href="http://openrisc.github.io">OpenRISC</a>
+architecture. The toolchain is based on
+the <a href="https://sourceware.org/newlib/">newlib</a> C library and
+the standard GNU gcc, binutils and gdb. With this toolchain you can
+compile your own C code and execute it on the various OpenRISC
+targets.</p>
+
+<h3>Build your software</h3>
+
+A simple <emph>hello world</emph> program like this <tt>hello.c</tt>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+int main(int argc, char *argv[]) {
+    printf("Hello World!\n");
+    return 0;
+}
+</code></pre>
+
+is basically compiled with the cross compilation toolchain:
+
+<pre><code>$ or1k-elf-gcc -o hello.elf hello.c
+</code></pre>
+
+The default is to build for the or1ksim simulator. You can also build
+it for other boards, e.g. for the DE0 nano:
+
+<pre><code>$ or1k-elf-gcc -o hello.elf hello.c -mboard=de0_nano
+</code></pre>
+
+Finally there are a few architecture-specific compiler options
+(multilib configurations):
+
+<ul>
+<li><code>-mno-delay</code> compiles for architecture implementations without delay slot.</li>
+<li><code>-mcompat-delay</code> compiles for both architectures. Those
+have an increased code size as each delay slot is filled with a
+no-operation.</li>
+<li><code>-msoft-float</code> compiles with soft floating point
+instructions, for example when your target implementation does not
+contain an FPU.</li>
+</ul>
+
+<h3>or1k support extensions</h3>
+
+<p>The libgloss, which is an essential part of a newlib-based
+cross-compiler contains some additional code to support baremetal
+programming. Most essential those are some simple helping functions to
+change the core state and support for exception, interrupt and timer
+handling. An extensive documentation of the functions can be found <a href="docs/html/index.html">here</a>.</p>
+
+<p>There also is a <a href="tutorial.html">short tutorial</a> with
+some basic examples is also available</p>
+
+<h3>Download the Toolchain</h3>
+
+<h4>Releases</h4>
+
+<p>You can install pre-compiled toolchains and install them on your
+Linux system. We have prebuilt-toolchains for releases of the
+different components that need to be installed
+to <tt>/opt/or1k-elf</tt>. You can find all releases <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release">here</a>. The latest release (newlib 2.20+or1k fixes, binutils 2.20, gcc 4.9):</p>
+
+<ul>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
+</ul>
+
+
+<h4>Development builds</h4>
+
+<p>There are continuous builds from the current <b>upstream</b>
+versions of binutils, gdb and newlib along with the OpenRISC gcc port.
+They are automatically executed after source code changes and their
+results are automatically
+uploaded <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/upstream/">here</a>.
+
+<p>For each build, the txt file describes the git revisions used in that
+build and the successfully built, but untested, toolchains are
+available for different operating systems.</p>
+
+<p>Current upstream build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_upstream_build"/></a></p>
+
+<p>Direct links to the latest build:</p>
+
+<ul>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
+</ul>
+
+<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
+² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
+
+<p>Beside this we continuously build from changes in the OpenRISC development repositories. Current development build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_dev_build"/></a></p>
+
+<ul>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
+<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
+</ul>
+
+<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
+² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
+
+      </section>
+      <footer>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>

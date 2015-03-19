@@ -1,0 +1,228 @@
+\hypertarget{group__or1k__timer}{\section{Timer control}
+\label{group__or1k__timer}\index{Timer control@{Timer control}}
+}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}{or1k\-\_\-timer\-\_\-init} (unsigned int hz)
+\item 
+void \hyperlink{group__or1k__timer_gaf760867d2f9d04f0c101c4c4975b0616}{or1k\-\_\-timer\-\_\-set\-\_\-period} (uint32\-\_\-t hz)
+\item 
+void \hyperlink{group__or1k__timer_ga28914de74748e69a61db1ea7eb1ff553}{or1k\-\_\-timer\-\_\-set\-\_\-handler} (void($\ast$handler)(void))
+\item 
+void \hyperlink{group__or1k__timer_gad50095aee03012b59fc5b6de5e0e9bdf}{or1k\-\_\-timer\-\_\-set\-\_\-mode} (uint32\-\_\-t mode)
+\item 
+void \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable} (void)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable} (void)
+\item 
+void \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\-\_\-timer\-\_\-restore} (uint32\-\_\-t sr\-\_\-tee)
+\item 
+void \hyperlink{group__or1k__timer_ga48cd5b4c0bcc3c0b5ec28326426a66aa}{or1k\-\_\-timer\-\_\-pause} (void)
+\item 
+void \hyperlink{group__or1k__timer_ga0bbdc374a3d140e538fc32b48b05df47}{or1k\-\_\-timer\-\_\-reset} (void)
+\item 
+unsigned long \hyperlink{group__or1k__timer_ga2baa18c5153c793b7d2a85c6e224cea0}{or1k\-\_\-timer\-\_\-get\-\_\-ticks} (void)
+\item 
+void \hyperlink{group__or1k__timer_ga456bc40cdfbbbdfd62c936c065457cc2}{or1k\-\_\-timer\-\_\-reset\-\_\-ticks} (void)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The tick timer can be used for time measurement, operating system scheduling etc. By default it is initialized to continuously count the ticks of a certain period after calling \hyperlink{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}{or1k\-\_\-timer\-\_\-init()}. The period can later be changed using \hyperlink{group__or1k__timer_gaf760867d2f9d04f0c101c4c4975b0616}{or1k\-\_\-timer\-\_\-set\-\_\-period()}.
+
+The timer is controlled using \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable()}, \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()}, \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\-\_\-timer\-\_\-restore()}, \hyperlink{group__or1k__timer_ga48cd5b4c0bcc3c0b5ec28326426a66aa}{or1k\-\_\-timer\-\_\-pause()}. After initialization it is required to enable the timer the first time using \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable()}. \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()} only disables the tick timer interrupts, it does not disable the timer counting. If you plan to use a pair of \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()} and \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable()} to protect sections of your code against interrupts you should use \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()} and \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\-\_\-timer\-\_\-restore()}, as it may be possible that the timer interrupt was not enabled before disabling it, enable would then start it unconditionally. \hyperlink{group__or1k__timer_ga48cd5b4c0bcc3c0b5ec28326426a66aa}{or1k\-\_\-timer\-\_\-pause()} pauses the counting.
+
+In the default mode you can get the tick value using \hyperlink{group__or1k__timer_ga2baa18c5153c793b7d2a85c6e224cea0}{or1k\-\_\-timer\-\_\-get\-\_\-ticks()} and reset this value using \hyperlink{group__or1k__timer_ga456bc40cdfbbbdfd62c936c065457cc2}{or1k\-\_\-timer\-\_\-reset\-\_\-ticks()}.
+
+Example for using the default mode\-:
+
+
+\begin{DoxyCode}
+\textcolor{keywordtype}{int} main() \{
+  uint32\_t ticks = 0;
+  uint32\_t timerstate;
+  \hyperlink{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}{or1k\_timer\_init}(100);
+  \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\_timer\_enable}();
+  \textcolor{keywordflow}{while} (1) \{
+    \textcolor{keywordflow}{while} (ticks == \hyperlink{group__or1k__timer_ga2baa18c5153c793b7d2a85c6e224cea0}{or1k\_timer\_get\_ticks}()) \{ \}
+    timerstate = \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\_timer\_disable}();
+    \textcolor{comment}{// do something atomar}
+    \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\_timer\_restore}(timerstate);
+    \textcolor{keywordflow}{if} (ticks == 100) \{
+      printf(\textcolor{stringliteral}{"A second elapsed\(\backslash\)n"});
+      \hyperlink{group__or1k__timer_ga456bc40cdfbbbdfd62c936c065457cc2}{or1k\_timer\_reset\_ticks}();
+      ticks = 0;
+    \}
+  \}
+\}
+\end{DoxyCode}
+
+
+It is possible to change the mode of the tick timer using \hyperlink{group__or1k__timer_gad50095aee03012b59fc5b6de5e0e9bdf}{or1k\-\_\-timer\-\_\-set\-\_\-mode()}. Allowed values are the correct bit pattern (including the bit positions) for the T\-T\-M\-R register, it is recommended to use the macros defined in spr-\/defs.\-h. For example, implementing an operating system with scheduling decisions of varying duration favors the implementation of single run tick timer. Here, each quantum is started before leaving the operating system kernel. The counter can be restarted with \hyperlink{group__or1k__timer_ga0bbdc374a3d140e538fc32b48b05df47}{or1k\-\_\-timer\-\_\-reset()}. Example\-:
+
+
+\begin{DoxyCode}
+\textcolor{keywordtype}{void} tick\_handler(\textcolor{keywordtype}{void}) \{
+  \textcolor{comment}{// Make schedule decision}
+  \textcolor{comment}{// and set new thread}
+  \hyperlink{group__or1k__timer_ga0bbdc374a3d140e538fc32b48b05df47}{or1k\_timer\_reset}();
+  \textcolor{comment}{// End of exception, new thread will run}
+\}
+
+\textcolor{keywordtype}{int} main() \{
+  \textcolor{comment}{// Configure operating system and start threads..}
+
+  \textcolor{comment}{// Configure timer}
+  \hyperlink{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}{or1k\_timer\_init}(50);
+  \hyperlink{group__or1k__timer_ga28914de74748e69a61db1ea7eb1ff553}{or1k\_timer\_set\_handler}(&tick\_handler);
+  \hyperlink{group__or1k__timer_gad50095aee03012b59fc5b6de5e0e9bdf}{or1k\_timer\_set\_mode}(SPR\_TTMR\_SR);
+  \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\_timer\_enable}();
+
+  \textcolor{comment}{// Schedule first thread and die..}
+\}
+\end{DoxyCode}
+ 
+
+\subsection{Function Documentation}
+\hypertarget{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-disable@{or1k\-\_\-timer\-\_\-disable}}
+\index{or1k\-\_\-timer\-\_\-disable@{or1k\-\_\-timer\-\_\-disable}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-disable}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-timer\-\_\-disable (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}
+Disable timer interrupt
+
+This disables the timer interrupt exception and returns the state of the interrupt exception enable flag before the call. This can be used with \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\-\_\-timer\-\_\-restore()} to implement sequences of code that are not allowed to be interrupted. Using \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable()} will unconditionally enable the interrupt independent of the state before calling \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()}. For an example see \hyperlink{group__or1k__timer}{Timer control}.
+
+\begin{DoxyReturn}{Returns}
+Status of timer interrupt before call 
+\end{DoxyReturn}
+\hypertarget{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-enable@{or1k\-\_\-timer\-\_\-enable}}
+\index{or1k\-\_\-timer\-\_\-enable@{or1k\-\_\-timer\-\_\-enable}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-enable}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-enable (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}
+Enable timer interrupt
+
+Enable the timer interrupt exception, independent of the status before. If you want to enable the timer conditionally, for example to implement a non-\/interruptible sequence of code, you should use \hyperlink{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{or1k\-\_\-timer\-\_\-restore()}. See the description of \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()} for more details.
+
+The enable will also restore the mode if the timer was paused previously. \hypertarget{group__or1k__timer_ga2baa18c5153c793b7d2a85c6e224cea0}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-get\-\_\-ticks@{or1k\-\_\-timer\-\_\-get\-\_\-ticks}}
+\index{or1k\-\_\-timer\-\_\-get\-\_\-ticks@{or1k\-\_\-timer\-\_\-get\-\_\-ticks}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-get\-\_\-ticks}]{\setlength{\rightskip}{0pt plus 5cm}unsigned long or1k\-\_\-timer\-\_\-get\-\_\-ticks (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga2baa18c5153c793b7d2a85c6e224cea0}
+Get timer ticks
+
+Get the global ticks of the default configuration. This will increment the tick counter according to the preconfigured period.
+
+\begin{DoxyReturn}{Returns}
+Current value of ticks 
+\end{DoxyReturn}
+\hypertarget{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-init@{or1k\-\_\-timer\-\_\-init}}
+\index{or1k\-\_\-timer\-\_\-init@{or1k\-\_\-timer\-\_\-init}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-init}]{\setlength{\rightskip}{0pt plus 5cm}int or1k\-\_\-timer\-\_\-init (
+\begin{DoxyParamCaption}
+\item[{unsigned int}]{hz}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga432f34016f4f559c29b0be4fbc87e623}
+Initialize tick timer
+
+This initializes the tick timer in default mode (see \hyperlink{group__or1k__timer}{Timer control} for details).
+
+
+\begin{DoxyParams}{Parameters}
+{\em hz} & Initial period of the tick timer \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if successful, -\/1 if timer not present 
+\end{DoxyReturn}
+\hypertarget{group__or1k__timer_ga48cd5b4c0bcc3c0b5ec28326426a66aa}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-pause@{or1k\-\_\-timer\-\_\-pause}}
+\index{or1k\-\_\-timer\-\_\-pause@{or1k\-\_\-timer\-\_\-pause}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-pause}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-pause (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga48cd5b4c0bcc3c0b5ec28326426a66aa}
+Pause timer counter
+
+Pauses the counter of the tick timer. The counter will hold its current value and it can be started again with \hyperlink{group__or1k__timer_ga369138d63850f2a4dfe216315c31f3d4}{or1k\-\_\-timer\-\_\-enable()} which will restore the configured mode. \hypertarget{group__or1k__timer_ga0bbdc374a3d140e538fc32b48b05df47}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-reset@{or1k\-\_\-timer\-\_\-reset}}
+\index{or1k\-\_\-timer\-\_\-reset@{or1k\-\_\-timer\-\_\-reset}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-reset}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-reset (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga0bbdc374a3d140e538fc32b48b05df47}
+Reset timer counter \hypertarget{group__or1k__timer_ga456bc40cdfbbbdfd62c936c065457cc2}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-reset\-\_\-ticks@{or1k\-\_\-timer\-\_\-reset\-\_\-ticks}}
+\index{or1k\-\_\-timer\-\_\-reset\-\_\-ticks@{or1k\-\_\-timer\-\_\-reset\-\_\-ticks}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-reset\-\_\-ticks}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-reset\-\_\-ticks (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga456bc40cdfbbbdfd62c936c065457cc2}
+Reset timer ticks
+
+Resets the timer ticks in default configuration to 0. \hypertarget{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-restore@{or1k\-\_\-timer\-\_\-restore}}
+\index{or1k\-\_\-timer\-\_\-restore@{or1k\-\_\-timer\-\_\-restore}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-restore}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-restore (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{sr\-\_\-tee}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga0e392edcf73b9cf1c0279471ae59d241}
+Restore timer interrupt exception flag
+
+Restores the timer interrupt exception flag as returned by \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()}. See the description of \hyperlink{group__or1k__timer_gab40473a360aa82273575cdbc4381ac93}{or1k\-\_\-timer\-\_\-disable()} and \hyperlink{group__or1k__timer}{Timer control} for details and an example.
+
+
+\begin{DoxyParams}{Parameters}
+{\em sr\-\_\-tee} & Status of timer interrupt \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__timer_ga28914de74748e69a61db1ea7eb1ff553}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-set\-\_\-handler@{or1k\-\_\-timer\-\_\-set\-\_\-handler}}
+\index{or1k\-\_\-timer\-\_\-set\-\_\-handler@{or1k\-\_\-timer\-\_\-set\-\_\-handler}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-set\-\_\-handler}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-set\-\_\-handler (
+\begin{DoxyParamCaption}
+\item[{void($\ast$)(void)}]{handler}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_ga28914de74748e69a61db1ea7eb1ff553}
+Replace the timer interrupt handler
+
+By default the tick timer is used to handle timer ticks. The user can replace this with an own handler for example when implementing an operating system.
+
+
+\begin{DoxyParams}{Parameters}
+{\em handler} & The callback function pointer to the handler \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__timer_gad50095aee03012b59fc5b6de5e0e9bdf}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-set\-\_\-mode@{or1k\-\_\-timer\-\_\-set\-\_\-mode}}
+\index{or1k\-\_\-timer\-\_\-set\-\_\-mode@{or1k\-\_\-timer\-\_\-set\-\_\-mode}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-set\-\_\-mode}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-set\-\_\-mode (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{mode}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_gad50095aee03012b59fc5b6de5e0e9bdf}
+Set timer mode
+
+The timer has different modes (see architecture manual). The default is to automatically restart counting (S\-P\-R\-\_\-\-T\-T\-M\-R\-\_\-\-R\-T), others are single run (S\-P\-R\-\_\-\-T\-T\-M\-R\-\_\-\-S\-R) and continuous run (S\-P\-R\-\_\-\-T\-T\-M\-R\-\_\-\-C\-R).
+
+
+\begin{DoxyParams}{Parameters}
+{\em mode} & a valid mode (use definitions from spr-\/defs.\-h as it is important that those are also at the correct position in the bit field!) \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__timer_gaf760867d2f9d04f0c101c4c4975b0616}{\index{Timer control@{Timer control}!or1k\-\_\-timer\-\_\-set\-\_\-period@{or1k\-\_\-timer\-\_\-set\-\_\-period}}
+\index{or1k\-\_\-timer\-\_\-set\-\_\-period@{or1k\-\_\-timer\-\_\-set\-\_\-period}!Timer control@{Timer control}}
+\subsubsection[{or1k\-\_\-timer\-\_\-set\-\_\-period}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-timer\-\_\-set\-\_\-period (
+\begin{DoxyParamCaption}
+\item[{uint32\-\_\-t}]{hz}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__timer_gaf760867d2f9d04f0c101c4c4975b0616}
+Set period of timer
+
+Set the period of the timer to a value in Hz. The frequency from the board support package is used to determine the match value. 

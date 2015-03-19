@@ -1,0 +1,133 @@
+\hypertarget{group__or1k__multicore}{\section{Multicore and Synchronization Support}
+\label{group__or1k__multicore}\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__multicore_ga7634cfa9fe0495644c2d092146282745}{or1k\-\_\-coreid} (void)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__multicore_gab0b5066158a5dc7e360d84ed0eb32d8c}{or1k\-\_\-numcores} (void)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__multicore_gacf35bdd237d24908c26831a25f118d28}{or1k\-\_\-sync\-\_\-ll} (void $\ast$address)
+\item 
+int \hyperlink{group__or1k__multicore_gae87e9d912dfd1e1b6ee740d6ab24e091}{or1k\-\_\-sync\-\_\-sc} (void $\ast$address, uint32\-\_\-t value)
+\item 
+uint32\-\_\-t \hyperlink{group__or1k__multicore_gac87806fdafd0b1e65ad6c961fe6dba8e}{or1k\-\_\-sync\-\_\-cas} (void $\ast$address, uint32\-\_\-t compare, uint32\-\_\-t swap)
+\item 
+int \hyperlink{group__or1k__multicore_ga5ae9688b954590e20e37381b303c661f}{or1k\-\_\-sync\-\_\-tsl} (void $\ast$address)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Function Documentation}
+\hypertarget{group__or1k__multicore_ga7634cfa9fe0495644c2d092146282745}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-coreid@{or1k\-\_\-coreid}}
+\index{or1k\-\_\-coreid@{or1k\-\_\-coreid}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-coreid}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-coreid (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_ga7634cfa9fe0495644c2d092146282745}
+Read core identifier
+
+\begin{DoxyReturn}{Returns}
+Core identifier 
+\end{DoxyReturn}
+\hypertarget{group__or1k__multicore_gab0b5066158a5dc7e360d84ed0eb32d8c}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-numcores@{or1k\-\_\-numcores}}
+\index{or1k\-\_\-numcores@{or1k\-\_\-numcores}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-numcores}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-numcores (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_gab0b5066158a5dc7e360d84ed0eb32d8c}
+Read number of cores
+
+\begin{DoxyReturn}{Returns}
+Total number of cores 
+\end{DoxyReturn}
+\hypertarget{group__or1k__multicore_gac87806fdafd0b1e65ad6c961fe6dba8e}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-sync\-\_\-cas@{or1k\-\_\-sync\-\_\-cas}}
+\index{or1k\-\_\-sync\-\_\-cas@{or1k\-\_\-sync\-\_\-cas}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-sync\-\_\-cas}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-sync\-\_\-cas (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{address, }
+\item[{uint32\-\_\-t}]{compare, }
+\item[{uint32\-\_\-t}]{swap}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_gac87806fdafd0b1e65ad6c961fe6dba8e}
+Compare and Swap
+
+Loads a data item from the memory and compares a given value to it. If the values match, a new value is written to the memory, if they mismatch, the operation is aborted. The whole operation is atomic, i.\-e., it is guaranteed that no other core changes the value between the read and the write.
+
+
+\begin{DoxyParams}{Parameters}
+{\em address} & Address to operate on \\
+\hline
+{\em compare} & Compare value \\
+\hline
+{\em swap} & New value to write \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The value read from memory (can be used to check for success) 
+\end{DoxyReturn}
+\hypertarget{group__or1k__multicore_gacf35bdd237d24908c26831a25f118d28}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-sync\-\_\-ll@{or1k\-\_\-sync\-\_\-ll}}
+\index{or1k\-\_\-sync\-\_\-ll@{or1k\-\_\-sync\-\_\-ll}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-sync\-\_\-ll}]{\setlength{\rightskip}{0pt plus 5cm}uint32\-\_\-t or1k\-\_\-sync\-\_\-ll (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{address}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_gacf35bdd237d24908c26831a25f118d28}
+Load linked
+
+Load a value from the given address and link it. If the following \hyperlink{group__or1k__multicore_gae87e9d912dfd1e1b6ee740d6ab24e091}{or1k\-\_\-sync\-\_\-sc()} goes to the same address and there was no conflicting access between loading and storing, the value is written back, else the write fails.
+
+
+\begin{DoxyParams}{Parameters}
+{\em address} & Address to load value from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Value read from the address 
+\end{DoxyReturn}
+\hypertarget{group__or1k__multicore_gae87e9d912dfd1e1b6ee740d6ab24e091}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-sync\-\_\-sc@{or1k\-\_\-sync\-\_\-sc}}
+\index{or1k\-\_\-sync\-\_\-sc@{or1k\-\_\-sync\-\_\-sc}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-sync\-\_\-sc}]{\setlength{\rightskip}{0pt plus 5cm}int or1k\-\_\-sync\-\_\-sc (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{address, }
+\item[{uint32\-\_\-t}]{value}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_gae87e9d912dfd1e1b6ee740d6ab24e091}
+Store conditional
+
+Conditionally store a value to the address. The address must have been read before using \hyperlink{group__or1k__multicore_gacf35bdd237d24908c26831a25f118d28}{or1k\-\_\-sync\-\_\-ll()} and there must be no other load link after that, otherwise this will always fail. In case there was no other write to the same address in between the load link and the store conditional, the store is successful, otherwise it will also fail.
+
+
+\begin{DoxyParams}{Parameters}
+{\em address} & Address to conditionally store to \\
+\hline
+{\em value} & Value to write to address \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if success, 0 if fail 
+\end{DoxyReturn}
+\hypertarget{group__or1k__multicore_ga5ae9688b954590e20e37381b303c661f}{\index{Multicore and Synchronization Support@{Multicore and Synchronization Support}!or1k\-\_\-sync\-\_\-tsl@{or1k\-\_\-sync\-\_\-tsl}}
+\index{or1k\-\_\-sync\-\_\-tsl@{or1k\-\_\-sync\-\_\-tsl}!Multicore and Synchronization Support@{Multicore and Synchronization Support}}
+\subsubsection[{or1k\-\_\-sync\-\_\-tsl}]{\setlength{\rightskip}{0pt plus 5cm}int or1k\-\_\-sync\-\_\-tsl (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{address}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__multicore_ga5ae9688b954590e20e37381b303c661f}
+Test and Set Lock
+
+Check for a lock on an address. This means, if there is 0 at an address it will overwrite it with one and return 0. If the lock was already set (value 1 read from address), the function returns 1. The operation is atomic.
+
+
+\begin{DoxyParams}{Parameters}
+{\em address} & Address of the lock \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 if success, 1 if failed 
+\end{DoxyReturn}

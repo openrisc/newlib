@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>or1k-elf toolchain (newlib port for OpenRISC)</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>or1k-elf Toolchain Build Instructions</h1>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/openrisc/newlib" class="button fork"><strong>View On GitHub</strong></a>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+	<ul>
+	<li><a href="index.html">Home</a></li>
+	<li><a href="tutorial.html">Tutorial</a></li>
+	<li><a href="building.html">Build Instructions</a></li>
+	<li><a href="multicore.html">Multicore Toolchain</a></li>
+	</ul>
+      </nav>
+      <section>
+
+<p>If you can't install the toolchain to <tt>/opt/or1k-elf</tt> or the
+pre-compiled toolchains can't run on your system, you may need to
+build the toolchain from scratch. This is not that spectacular
+nowadays and can take like an hour maximum. Nevertheless you need some
+basic understanding in how a build GNU process works.</p>
+
+<h3>Preparation</h3>
+
+<p>First of all you need the development packages of
+the <tt>mpfr</tt>, <tt>gmp</tt> and <tt>mpc</tt> libraries on your
+computer, along with of course the basic GCC toolchain for your
+host.</p>
+
+<p>Next you need to setup the environment for your build
+(<tt>PREFIX</tt> to ease the execution of the code below
+and <tt>PATH</tt> because later stages need the results from previous
+stages):</p>
+
+<pre><code>export PREFIX=/opt/or1k-elf
+export PATH=$PATH:$PREFIX/bin
+</code></pre>
+
+<p>Next you need the git repositories. Of course you can also use the
+release snapshot tarballs of the releases. To build from the upstream
+repositories:</p>
+
+<pre><code>git clone git://sourceware.org/git/binutils-gdb.git
+git clone git@github.com:openrisc/or1k-gcc gcc
+git clone git://sourceware.org/git/newlib.git
+</code></pre>
+
+<p>In case you want to build from the development sources you need to
+check out the following set of repositories:</p>
+
+<pre><code>git clone git@github.com:openrisc/or1k-src binutils-gdb
+git clone git@github.com:openrisc/or1k-gcc gcc
+git clone git@github.com:openrisc/newlib.git
+</code></pre>
+
+<p>Those repositories differ from the upstream repositories in that there might be changes in the upstream code that have not yet been merged, but also architecture specific code that is not yet in the upstream distribution.</p>
+
+<p>Of course you may desire to check out a repository for a certain
+release by checkout of the respective git tag. Once the repositories
+are in your temporary compilation repository, you need to execute the
+following sequence to build the entire toolchain.</p>
+
+<h3>Build binutils</h3>
+
+<p>The GNU binutils contain the assembler, linker, <tt>objdump</tt>
+and a lot more programs to handle the binary files for a certain
+architecture. Those can be directly built standalone:</p>
+
+<pre><code>mkdir build-binutils; cd build-binutils
+$ ../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss
+$ make
+$ make install
+</code></pre>
+
+<h3>GCC stage 1</h3>
+
+<p>GCC is built in two stages. First we now need the basic C compiler
+to build the C library in the next step:</p>
+
+<pre><code>$ mkdir build-gcc-stage1; cd build-gcc-stage1
+$ ../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c --disable-shared --disable-libssp
+$ make
+$ make install
+</code></pre>
+
+<h3>Newlib</h3>
+
+<p>Now we can build the newlib C library:</p>
+
+<pre><code>$ mkdir build-newlib; cd build-newlib
+$ ../newlib/configure --target=or1k-elf --prefix=$PREFIX
+$ make
+$ make install
+</code></pre>
+
+<h3>GCC stage 2</h3>
+
+<p>Now we can build the entire GCC and tell it about using newlib:</p>
+
+<pre><code>$ mkdir build-gcc-stage2; cd build-gcc-stage2
+$ ../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c,c++ --disable-shared --disable-libssp --with-newlib
+$ make
+$ make install
+</pre></code>
+
+<h3>GDB</h3>
+
+<p>In the last step, we can now build <tt>gdb</tt> for our
+architecture:</p>
+
+<pre><code>$ mkdir build-gdb; cd build-gdb
+$ ../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --enable-sim --disable-or1ksim --enable-gdb  --with-sysroot --disable-newlib --disable-libgloss
+$ make
+$ make install
+</code></pre>
+
+<p>Now you are done and have the
+binaries <tt>or1k-elf-gcc</tt>, <tt>or1k-elf-gdb</tt>, <tt>or1k-elf-ld</tt>
+etc. in <tt>$PREFIX/bin</tt>.</p>
+
+      </section>
+      <footer>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>

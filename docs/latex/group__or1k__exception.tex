@@ -1,0 +1,44 @@
+\hypertarget{group__or1k__exception}{\section{Exception handling}
+\label{group__or1k__exception}\index{Exception handling@{Exception handling}}
+}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef void($\ast$ \hyperlink{group__or1k__exception_ga20831301797ab759efddfc215a260b8a}{or1k\-\_\-exception\-\_\-handler\-\_\-fptr} )(void)
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{group__or1k__exception_gac3e0470bbc623a950c46650a0dc734e6}{or1k\-\_\-exception\-\_\-handler\-\_\-add} (int id, \hyperlink{group__or1k__exception_ga20831301797ab759efddfc215a260b8a}{or1k\-\_\-exception\-\_\-handler\-\_\-fptr} handler)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{group__or1k__exception_ga20831301797ab759efddfc215a260b8a}{\index{Exception handling@{Exception handling}!or1k\-\_\-exception\-\_\-handler\-\_\-fptr@{or1k\-\_\-exception\-\_\-handler\-\_\-fptr}}
+\index{or1k\-\_\-exception\-\_\-handler\-\_\-fptr@{or1k\-\_\-exception\-\_\-handler\-\_\-fptr}!Exception handling@{Exception handling}}
+\subsubsection[{or1k\-\_\-exception\-\_\-handler\-\_\-fptr}]{\setlength{\rightskip}{0pt plus 5cm}typedef void($\ast$ or1k\-\_\-exception\-\_\-handler\-\_\-fptr)(void)}}\label{group__or1k__exception_ga20831301797ab759efddfc215a260b8a}
+Function pointer to an exception handler function 
+
+\subsection{Function Documentation}
+\hypertarget{group__or1k__exception_gac3e0470bbc623a950c46650a0dc734e6}{\index{Exception handling@{Exception handling}!or1k\-\_\-exception\-\_\-handler\-\_\-add@{or1k\-\_\-exception\-\_\-handler\-\_\-add}}
+\index{or1k\-\_\-exception\-\_\-handler\-\_\-add@{or1k\-\_\-exception\-\_\-handler\-\_\-add}!Exception handling@{Exception handling}}
+\subsubsection[{or1k\-\_\-exception\-\_\-handler\-\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-exception\-\_\-handler\-\_\-add (
+\begin{DoxyParamCaption}
+\item[{int}]{id, }
+\item[{{\bf or1k\-\_\-exception\-\_\-handler\-\_\-fptr}}]{handler}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__exception_gac3e0470bbc623a950c46650a0dc734e6}
+Register exception handler
+
+Register an exception handler for the given exception id. This handler is in the following then called when the exception occurs. You can thereby individually handle those exceptions.
+
+
+\begin{DoxyParams}{Parameters}
+{\em id} & Exception id \\
+\hline
+{\em handler} & Handler callback \\
+\hline
+\end{DoxyParams}

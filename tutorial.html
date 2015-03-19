@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>or1k-elf toolchain (newlib port for OpenRISC)</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>Tutorial of the or1k Support Functions</h1>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/openrisc/newlib" class="button fork"><strong>View On GitHub</strong></a>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+	<ul>
+	<li><a href="index.html">Home</a></li>
+	<li><a href="tutorial.html">Tutorial</a></li>
+	<li><a href="building.html">Build Instructions</a></li>
+	<li><a href="multicore.html">Multicore Toolchain</a></li>
+	</ul>
+      </nav>
+      <section>
+
+<p>The or1k-elf toolchain contains the standard C library
+(<tt>printf</tt>, <tt>malloc</tt>, etc.). But beside this, it also
+contains a large set of function that help the baremetal programmer
+with controlling the processor, shortly summarized
+as <tt>or1k-support</tt>.</p>
+
+<h3>Getting Started</h3>
+
+<p>The most important functions are defined in
+the <tt>or1k-support.h</tt> header file. For example, three macros are
+defined there to access memory-mapped
+registers: <tt>REG8(x)</tt>, <tt>REG16(x)</tt> and <tt>REG32(x)</tt>.
+Those are for example helpful if you control a device that is
+connected to the bus and the compiler should not reuse previously
+loaded values (the macros expand to pointers to volatile values).
+Example:</p>
+
+<pre><code>#include &lt;or1k-support.h&gt;
+...
+#define MY_DEVICE_READ_REG 0xf0000000
+...
+void getchars(char* x, int num) {
+    int i;
+    for (i = 0; i < num; i++) {
+	x[i] = REG8(MY_DEVICE_READ_REG);
+    }
+}</code></pre>
+
+<h3>Cache handling</h3>
+
+The caches can be controlled by a set
+of <a href="docs/html/group__or1k__cache.html">functions</a>. To
+disable the data cache for a certain period of time, then flush this
+value from the cache and re-activate the cache (for non-coherent
+memory accesses), you can for example execute:
+
+<pre><code>#include &lt;or1k-support.h&gt;
+...
+void f(int *a) {
+    or1k_dcache_disable();
+    ...
+    /* your fancy non-coherent stuff via a */
+    ...
+    or1k_dcache_flush(a);
+    ...
+    or1k_dcache_enable();
+}</code></pre>
+
+<i>more to come..</i>
+      </section>
+      <footer>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>

@@ -1,0 +1,79 @@
+\hypertarget{group__or1k__macros}{\section{O\-R1\-K macros}
+\label{group__or1k__macros}\index{O\-R1\-K macros@{O\-R1\-K macros}}
+}
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{R\-E\-G8}(add)~$\ast$((volatile unsigned char $\ast$) (add))
+\item 
+\#define \hyperlink{group__or1k__macros_ga35941eecac4fb28c9148e1cc1e90cc83}{R\-E\-G16}(add)~$\ast$((volatile unsigned short $\ast$) (add))
+\item 
+\#define \hyperlink{group__or1k__macros_gadec1dcdc9b3ae06aa3dcd28217eae5bb}{R\-E\-G32}(add)~$\ast$((volatile unsigned long $\ast$) (add))
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Macro Definition Documentation}
+\hypertarget{group__or1k__macros_ga35941eecac4fb28c9148e1cc1e90cc83}{\index{O\-R1\-K macros@{O\-R1\-K macros}!R\-E\-G16@{R\-E\-G16}}
+\index{R\-E\-G16@{R\-E\-G16}!OR1K macros@{O\-R1\-K macros}}
+\subsubsection[{R\-E\-G16}]{\setlength{\rightskip}{0pt plus 5cm}\#define R\-E\-G16(
+\begin{DoxyParamCaption}
+\item[{}]{add}
+\end{DoxyParamCaption}
+)~$\ast$((volatile unsigned short $\ast$) (add))}}\label{group__or1k__macros_ga35941eecac4fb28c9148e1cc1e90cc83}
+Access halfword-\/sized memory mapped register
+
+Used to access a 16 byte-\/sized memory mapped register. It avoids usage errors when not defining register addresses volatile and handles casting correctly.
+
+See \hyperlink{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{R\-E\-G8()} for an example.
+
+
+\begin{DoxyParams}{Parameters}
+{\em add} & Register address \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__macros_gadec1dcdc9b3ae06aa3dcd28217eae5bb}{\index{O\-R1\-K macros@{O\-R1\-K macros}!R\-E\-G32@{R\-E\-G32}}
+\index{R\-E\-G32@{R\-E\-G32}!OR1K macros@{O\-R1\-K macros}}
+\subsubsection[{R\-E\-G32}]{\setlength{\rightskip}{0pt plus 5cm}\#define R\-E\-G32(
+\begin{DoxyParamCaption}
+\item[{}]{add}
+\end{DoxyParamCaption}
+)~$\ast$((volatile unsigned long $\ast$) (add))}}\label{group__or1k__macros_gadec1dcdc9b3ae06aa3dcd28217eae5bb}
+Access word-\/sized memory mapped register
+
+Used to access a word-\/sized memory mapped register. It avoids usage errors when not defining register addresses volatile and handles casting correctly.
+
+See \hyperlink{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{R\-E\-G8()} for an example.
+
+
+\begin{DoxyParams}{Parameters}
+{\em add} & Register address \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{\index{O\-R1\-K macros@{O\-R1\-K macros}!R\-E\-G8@{R\-E\-G8}}
+\index{R\-E\-G8@{R\-E\-G8}!OR1K macros@{O\-R1\-K macros}}
+\subsubsection[{R\-E\-G8}]{\setlength{\rightskip}{0pt plus 5cm}\#define R\-E\-G8(
+\begin{DoxyParamCaption}
+\item[{}]{add}
+\end{DoxyParamCaption}
+)~$\ast$((volatile unsigned char $\ast$) (add))}}\label{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}
+Access byte-\/sized memory mapped register
+
+Used to access a byte-\/sized memory mapped register. It avoids usage errors when not defining register addresses volatile and handles casting correctly.
+
+Example for both read and write\-:
+
+
+\begin{DoxyCode}
+uint8\_t status = \hyperlink{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{REG8}(IPBLOCK\_STATUS\_REG\_ADDR);
+\hyperlink{group__or1k__macros_gafc0a6781cfc826214401f1694b196010}{REG8}(IPBLOCK\_ENABLE) = 1;
+\end{DoxyCode}
+
+
+
+\begin{DoxyParams}{Parameters}
+{\em add} & Register address \\
+\hline
+\end{DoxyParams}

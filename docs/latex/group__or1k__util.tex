@@ -1,0 +1,73 @@
+\hypertarget{group__or1k__util}{\section{Miscellaneous utility functions}
+\label{group__or1k__util}\index{Miscellaneous utility functions@{Miscellaneous utility functions}}
+}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{group__or1k__util_ga52924993168bc8dfd0172590b6295b38}{or1k\-\_\-report} (unsigned long int value)
+\item 
+unsigned long int \hyperlink{group__or1k__util_gaa54d6174ef059c4261e4c4175306f32e}{or1k\-\_\-rand} (void)
+\item 
+void \hyperlink{group__or1k__util_ga7fba2761098bfab181e8382924c0de72}{or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb} (void($\ast$cb)(char c))
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Function Documentation}
+\hypertarget{group__or1k__util_gaa54d6174ef059c4261e4c4175306f32e}{\index{Miscellaneous utility functions@{Miscellaneous utility functions}!or1k\-\_\-rand@{or1k\-\_\-rand}}
+\index{or1k\-\_\-rand@{or1k\-\_\-rand}!Miscellaneous utility functions@{Miscellaneous utility functions}}
+\subsubsection[{or1k\-\_\-rand}]{\setlength{\rightskip}{0pt plus 5cm}unsigned long int or1k\-\_\-rand (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__util_gaa54d6174ef059c4261e4c4175306f32e}
+Get (pseudo) random number
+
+This should return pseudo-\/random numbers, based on a Galois L\-F\-S\-R.
+
+\begin{DoxyReturn}{Returns}
+(Pseudo) Random number 
+\end{DoxyReturn}
+\hypertarget{group__or1k__util_ga52924993168bc8dfd0172590b6295b38}{\index{Miscellaneous utility functions@{Miscellaneous utility functions}!or1k\-\_\-report@{or1k\-\_\-report}}
+\index{or1k\-\_\-report@{or1k\-\_\-report}!Miscellaneous utility functions@{Miscellaneous utility functions}}
+\subsubsection[{or1k\-\_\-report}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-report (
+\begin{DoxyParamCaption}
+\item[{unsigned long int}]{value}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__util_ga52924993168bc8dfd0172590b6295b38}
+Report value to simulator
+
+Uses the built-\/in simulator functionality.
+
+
+\begin{DoxyParams}{Parameters}
+{\em value} & Value to report \\
+\hline
+\end{DoxyParams}
+\hypertarget{group__or1k__util_ga7fba2761098bfab181e8382924c0de72}{\index{Miscellaneous utility functions@{Miscellaneous utility functions}!or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb@{or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb}}
+\index{or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb@{or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb}!Miscellaneous utility functions@{Miscellaneous utility functions}}
+\subsubsection[{or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb}]{\setlength{\rightskip}{0pt plus 5cm}void or1k\-\_\-uart\-\_\-set\-\_\-read\-\_\-cb (
+\begin{DoxyParamCaption}
+\item[{void($\ast$)(char c)}]{cb}
+\end{DoxyParamCaption}
+)}}\label{group__or1k__util_ga7fba2761098bfab181e8382924c0de72}
+Register U\-A\-R\-T callback
+
+This function sets a callback function that is called when a character is received via U\-A\-R\-T. The callback function has no return and a gets the character as parameter. When a character is received, the function is called.
+
+Example (U\-A\-R\-T echo)\-: 
+\begin{DoxyCode}
+\textcolor{keywordtype}{void} uart\_in(\textcolor{keywordtype}{char} c) \{
+  printf(\textcolor{stringliteral}{"%c"}, c); \textcolor{comment}{// Echo}
+\}
+
+\textcolor{keywordtype}{int} main() \{
+  \hyperlink{group__or1k__util_ga7fba2761098bfab181e8382924c0de72}{or1k\_uart\_set\_read\_cb}(&uart\_in);
+  \hyperlink{group__or1k__interrupts_ga344fd4bd73d40748de810eda21f0f47c}{or1k\_interrupts\_enable}();
+
+  \textcolor{keywordflow}{while} (1) \{\}
+\}
+\end{DoxyCode}
+ 

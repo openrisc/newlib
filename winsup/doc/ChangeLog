@@ -1,3 +1,29 @@
+2015-04-10  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.0): Rename from ov-new1.7.36 and change
+	version number to 2.0.
+
+2015-04-02  David A. Wheeler  <dwheeler@dwheeler.com>
+
+	* faq-setup.xml: Document how Cygwin secures installation and
+	update against man-in-the-middle (MITM) attacks.  Note that
+	setup embeds a public key to check the signature of setup.ini,
+	and that setup.ini includes SHA-512 cryptographic hashes.
+
+2015-03-31  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* misc-funcs.xml (cygwin_internal): Correct return type.
+
+2015-03-31  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new1.7.36): Add new section.  Document GNU
+	basename.
+
+2015-03-30  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* posix.xml (std-gnu): Add basename.
+	(std-notes): Add note about two forms of basename.
+
 2015-03-13  Jon TURNEY  <jon.turney@dronecode.org.uk>
 
 	* Makefile.in (prefix): Define.

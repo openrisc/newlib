@@ -1,3 +1,273 @@
+2015-04-14  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (get_posix_access): Don't use GROUP_OBJ access to fix up
+	CLASS_OBJ mask on old-style ACLs.  Fix a comment.
+
+2015-04-12  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Always make sure Admins have
+	WRITE_DAC and WRITE_OWNER permissions.
+	* security.h (create_object_sd_from_attribute): Drop handle parameter
+	from prototype.
+	* security.cc (create_object_sd_from_attribute): Drop handle parameter.
+	Just create the standard POSIXy security descriptor.
+	(set_object_attribute): Accommodate dropped paramter in call to
+	create_object_sd_from_attribute.
+	* fhandler_tty.cc: Ditto, throughout.
+
+2015-04-12  Corinna Vinschen  <corinna@vinschen.de>
+
+	* shm.cc (shmget): Fetch segment size from server rather than using
+	size argument to accommodate existing segments.  Add comment to explain
+	why.
+
+2015-04-11  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler_disk_file.cc (fhandler_disk_file::fchmod): Fix typo in
+	mask computation.
+
+2015-04-10  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cygwin/version.h (CYGWIN_VERSION_DLL_MAJOR): Bump to 2000.
+	(CYGWIN_VERSION_DLL_MINOR): Set to 0.
+
+2015-04-04  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* exceptions.cc (call_signal_handler): Set mcontext.cr2 to the
+	faulting address.
+
+2015-04-02  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* exceptions.cc (call_signal_handler): Only bother to construct
+	the ucontext for signal handlers with SA_SIGINFO set.  Set
+	mcontext.oldmask.
+
+2015-04-04  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* exceptions.cc (call_signal_handler): Zero initialize context and set
+	context flags, as RlCaptureContext doesn't.
+
+2015-04-10  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler.cc (fhandler_base::open_with_arch): Call open with mode
+	not umasked.
+	(fhandler_base::open): Explicitely umask mode on NFS here.  Call new
+	set_created_file_access rather than set_file_attribute.
+	* fhandler_disk_file.cc (fhandler_disk_file::fchmod): Reimplement
+	setting permissions on filesystems supporting ACLs using the new
+	set_posix_access call.
+	(fhandler_disk_file::fchown): Ditto.
+	(fhandler_disk_file::mkdir): Call new set_created_file_access rather
+	than set_file_attribute.
+	* fhandler_socket.cc (fhandler_socket::bind): Don't umask here.  Add
+	WRITE_OWNER access to allow writing group in case of SGID bit set.
+	Call new set_created_file_access rather than set_file_attribute.
+	* path.cc (symlink_worker): Call new set_created_file_access rather
+	than set_file_attribute.
+	* sec_acl.cc (searchace): Un-staticize.
+	(set_posix_access): New, complementary functionality to
+	get_posix_access.
+	(setacl): Implement in terms of get_posix_access/set_posix_access.
+	(get_posix_access): Add handling for just created files requiring
+	their first Cygwin ACL.  Fix new_style recognition.  Handle SGID
+	bit.  For old-style ACLs, ignore SYSTEM and Administrators when
+	computing the {DEF_}CLASS_OBJ perms.
+	* security.cc (get_file_sd): Revamp comment.  Change and (hopefully)
+	speed up inheritance processing for just created files.
+	(alloc_sd): Remove.
+	(set_security_attribute): Call set_posix_access instead of alloc_sd.
+	(get_object_attribute): Fix return value.
+	(create_object_sd_from_attribute): Call set_posix_access instead of
+	alloc_sd.
+	(set_file_attribute): Remove.
+	(set_created_file_access): New function implemented in terms of
+	get_posix_access/set_posix_access.
+	* security.h (set_file_attribute): Remove prototype.
+	(set_created_file_access): Add prototype.
+	(searchace): Ditto.
+	(set_posix_access): Ditto.
+	* syscalls.cc (open): Call open_with_arch with mode not umasked.
+
+2015-04-09  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler_dsp.cc (fhandler_dev_dsp::open): Call open_null.
+
+2015-04-08  Corinna Vinschen  <corinna@vinschen.de>
+
+	* pwdgrp.h (sidfromuid): New inline function.
+	(sidfromgid): Ditto.
+	* fhandler_disk_file.cc (fhandler_disk_file::fchown): Use sidfromuid.
+	* quotactl.cc (quotactl): Use sidfromuid and sidfromgid.
+
+2015-04-08  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc: Change preceeding comment explaining new-style ACLs.
+	Describe how to generate deny ACEs in more detail.  Accommodate the
+	fact that a NULL deny ACE is used for {DEF_}CLASS_OBJ, rather than
+	a special Cygwin ACE.  Improve further comments.
+	(CYG_ACE_NEW_STYLE): Define.
+	(get_posix_access): Change from Cygwin ACE to NULL deny ACE.  Fix
+	CLASS_OBJ handling to generate CLASS_OBJ and DEF_CLASS_OBJ from a single
+	NULL deny ACE if the inheritance flags say so.
+	* sec_helper.cc (well_known_cygwin_sid): Remove.
+	* security.h (well_known_cygwin_sid): Drop declaration.
+
+2015-04-08  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cyggwin/acl.h (struct __acl16): Move from here...
+	* sec_acl.cc: ...to here.
+
+2015-04-07  Corinna Vinschen  <corinna@vinschen.de>
+
+	* tty.h (class tty): Remove unused 32/64 bit interoperability
+	considerations.
+
+2015-04-07  Corinna Vinschen  <corinna@vinschen.de>
+
+	* tty.h (NTTYS): Raise to 128.
+	* devices.in: Change pty, ptym, and cons expressions accordingly.
+	* devices.cc: Regenerate.
+
+2015-04-04  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* Makefile.in : Remove setting -fomit-frame-pointer for compiling
+	various files, it is already the default.  Set
+	-fno-omit-frame-pointer for exceptions.cc on x86.
+
+2015-04-03  Takashi Yano  <takashi.yano@nifty.ne.jp>
+
+	* fhandler_tty.cc (fhandler_pty_slave::read): Change calculation of
+	"readlen" not to use "bytes_in_pipe" value directly.
+
+2015-04-02  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* include/cygwin/signal.h (struct __mcontext): 16-byte align.
+	* include/sys/ucontext.h (ucontext_t): Ditto.
+
+2015-04-02  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (CYG_ACE_ISBITS_TO_WIN): Fix typo.
+	(get_posix_access): Rename index variable from i to idx.  Define only
+	once at top level.
+
+2015-04-02  Corinna Vinschen  <corinna@vinschen.de>
+
+	* security.cc (add_access_allowed_ace): Drop unused parameter "offset".
+	Accommodate throughout.
+	(add_access_denied_ace): Ditto.
+	* sec_acl.cc: Accommodate above change throughout.
+	* security.h (add_access_allowed_ace): Adjust prototype to above change.
+	(add_access_denied_ace): Ditto.
+
+2015-04-01  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cygwin/types.h: Include sys/_stdint.h rather than stdint.h.
+	* include/stdint.h: Drop in favor of newlib version.
+	* include/inttypes.h: Ditto.
+
+2015-04-01  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* include/sys/ucontext.h : New header.
+	* include/ucontext.h : Ditto.
+	* exceptions.cc (call_signal_handler): Provide ucontext_t
+	parameter to signal handler function.
+
+2015-04-01  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* external.cc (cygwin_internal): Add operation to retrieve a copy
+	of the EXCEPTION_RECORD from a siginfo_t *.
+	* include/sys/cygwin.h (cygwin_getinfo_types): Ditto.
+	* exception.h (cygwin_exception): Add exception_record accessor.
+
+2015-04-01  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* include/cygwin/signal.h : Rename struct ucontext to struct
+	__mcontext.  Fix layout differences from the Win32 API CONTEXT
+	type.  Remove unused member _internal.  Rename member which
+	corresponds to ContextFlags.  Add cr2 member.
+
+2015-04-01  Corinna Vinschen  <corinna@vinschen.de>
+
+	* grp.cc (internal_getgroups): Handle negative domain index to avoid
+	crashes.
+
+2015-03-31  Renato Silva  <br.renatosilva@gmail.com>
+
+	* net.cc (cygwin_gethostname): Fix buffer size error handling.
+
+2015-03-31  Corinna Vinschen  <corinna@vinschen.de>
+
+	* uinfo.cc (pwdgrp::fetch_account_from_windows): Don't allow fully
+	qualified Windows account names (domain\user or user@domain).
+
+2015-03-31  Corinna Vinschen  <corinna@vinschen.de>
+
+	* localtime.cc (tzset_unlocked): Export as _tzset_unlocked.
+
+2015-03-30  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* common.din (__gnu_basename): Export.
+	* path.cc (__gnu_basename): New function.
+
+2015-03-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygheap.h (cygheap_domain_info::add_domain): Add prototype.
+	* uinfo.cc (cygheap_domain_info::add_domain): New method.
+	(pwdgrp::fetch_account_from_windows): Try to add domain explicitely
+	if it was not in the original list of trusted domains and go ahead
+	rather than bailing out.  Add comment to explain why.
+
+2015-03-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygtls.h (struct _cygtls): Convert thread_context to type CONTEXT.
+	* exceptions.cc (_cygtls::signal_debugger): Use sizeof (CONTEXT) for
+	size of CONTEXT copied for GDB's digestion.
+	* include/cygwin/signal.h: Add a preliminary comment.
+
+2015-03-25  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/sys/termios.h: Add CMIN and CTIME.
+	* fhandler_termios.cc (fhandler_termios::tcinit): Use CMIN and CTIME.
+
+2015-03-25  Takashi Yano  <takashi.yano@nifty.ne.jp>
+
+	* tty.h (class tty_min): Remove variable "write_error" to which any
+	errors are not currently set at anywhere.
+	(class tty): Add variable "column" for handling ONOCR.
+	* tty.cc (tty::init): Add initialization code for variable "column".
+	* fhandler.h (class fhandler_pty_master): Remove variable "need_nl"
+	which is not necessary any more. "need_nl" was needed by OPOST process
+	in fhandler_pty_master::process_slave_output().
+	(class fhandler_pty_common): Add function process_opost_output() for
+	handling post processing for OPOST in write process.
+	* fhandler_tty.cc (fhandler_pty_master::process_slave_output): Count
+	TIOCPKT control byte into length to be read in TIOCPKT mode. Move
+	post processing for OPOST to write process. Remove code related to
+	variable "write_error". Return with EIO error if slave is already
+	closed.
+	(fhandler_pty_master::fhandler_pty_master): Remove initialization
+	code for variable "need_nl".
+	(fhandler_pty_common::process_opost_output): Add this function for
+	handling of OPOST in write process. Add code to avoid blocking in
+	non-blocking mode when output is suspended by ^S.
+	(fhandler_pty_slave::write): Call fhandler_pty_common::
+	process_opost_output() instead of WriteFile(). Remove code related to
+	variable "write_error".
+	(fhandler_pty_master::doecho): Call fhandler_pty_common::
+	process_opost_output() instead of WriteFile().
+	* select.cc (peek_pipe): Remove code related to variable "need_nl".
+
+2015-03-24  Corinna Vinschen  <corinna@vinschen.de>
+
+	Per glibc BZ #15366:
+	* inttypes.h: Drop __STDC_FORMAT_MACROS consideration.
+	* stdint.h: Drop __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS
+	consideration.
+
+2015-03-23  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cygwin/_types.h: Drop unused file.
+
 2015-03-19  Corinna Vinschen  <corinna@vinschen.de>
 
 	* sec_acl.cc (get_posix_access): Handle multiple ACEs for the

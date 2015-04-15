@@ -1,7 +1,7 @@
 /* exceptions.cc
 
-   Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014 Red Hat, Inc.
+   Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
+   2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015 Red Hat, Inc.
 
 This file is part of Cygwin.
 
@@ -16,6 +16,7 @@ details. */
 #include <stdlib.h>
 #include <syslog.h>
 #include <wchar.h>
+#include <ucontext.h>
 
 #include "cygtls.h"
 #include "pinfo.h"
@@ -1484,20 +1485,56 @@ _cygtls::call_signal_handler ()
       debug_only_printf ("dealing with signal %d", sig);
       this_sa_flags = sa_flags;
 
+      sigset_t this_oldmask = set_process_mask_delta ();
+
       /* Save information locally on stack to pass to handler. */
       int thissig = sig;
       siginfo_t thissi = infodata;
       void (*thisfunc) (int, siginfo_t *, void *) = func;
 
-      sigset_t this_oldmask = set_process_mask_delta ();
+      ucontext_t context;
+      ucontext_t *thiscontext = NULL;
+
+      /* Only make a context for SA_SIGINFO handlers */
+      if (this_sa_flags & SA_SIGINFO)
+	{
+	  context.uc_link = 0;
+	  context.uc_flags = 0;
+	  if (thissi.si_cyg)
+	    memcpy (&context.uc_mcontext, ((cygwin_exception *)thissi.si_cyg)->context(), sizeof(CONTEXT));
+	  else
+	    {
+	      /* FIXME: Really this should be the context which the signal interrupted? */
+	      memset(&context.uc_mcontext, 0, sizeof(struct __mcontext));
+	      context.uc_mcontext.ctxflags = CONTEXT_FULL;
+	      RtlCaptureContext ((CONTEXT *)&context.uc_mcontext);
+	    }
+
+	  /* FIXME: If/when sigaltstack is implemented, this will need to do
+	     something more complicated */
+	  context.uc_stack.ss_sp = NtCurrentTeb ()->Tib.StackBase;
+	  context.uc_stack.ss_flags = 0;
+	  if (!NtCurrentTeb ()->DeallocationStack)
+	    context.uc_stack.ss_size = (uintptr_t)NtCurrentTeb ()->Tib.StackLimit - (uintptr_t)NtCurrentTeb ()->Tib.StackBase;
+	  else
+	    context.uc_stack.ss_size = (uintptr_t)NtCurrentTeb ()->DeallocationStack - (uintptr_t)NtCurrentTeb ()->Tib.StackBase;
+
+	  context.uc_sigmask = context.uc_mcontext.oldmask = this_oldmask;
+
+	  context.uc_mcontext.cr2 = (thissi.si_signo == SIGSEGV
+				     || thissi.si_signo == SIGBUS)
+				    ? (uintptr_t) thissi.si_addr : 0;
+
+	  thiscontext = &context;
+	}
+
       int this_errno = saved_errno;
       reset_signal_arrived ();
       incyg = false;
       sig = 0;		/* Flag that we can accept another signal */
       unlock ();	/* unlock signal stack */
 
-      /* no ucontext_t information provided yet, so third arg is NULL */
-      thisfunc (thissig, &thissi, NULL);
+      thisfunc (thissig, &thissi, thiscontext);
       incyg = true;
 
       set_signal_mask (_my_tls.sigmask, this_oldmask);
@@ -1526,8 +1563,7 @@ _cygtls::signal_debugger (siginfo_t& si)
 #else
 	    c.Eip = retaddr ();
 #endif
-	  memcpy (&thread_context, &c, (&thread_context._internal -
-					(unsigned char *) &thread_context));
+	  memcpy (&thread_context, &c, sizeof (CONTEXT));
 	  /* Enough space for 32/64 bit addresses */
 	  char sigmsg[2 * sizeof (_CYGWIN_SIGNAL_STRING " ffffffff ffffffffffffffff")];
 	  __small_sprintf (sigmsg, _CYGWIN_SIGNAL_STRING " %d %y %p", si.si_signo,

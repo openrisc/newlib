@@ -1,3 +1,18 @@
+2015-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* rx/crt0.S (_start): If string instructions are not allowed,
+	avoid using SMOVF.
+
+2015-04-08  Nick Clifton  <nickc@redhat.com>
+
+	* rx/rx.ld: Add .note and DWARF3 sections.
+	* rx/rx-sim.ld: Likewise.
+
+2015-04-07  Nick Clifton  <nickc@redhat.com>
+
+	* rl78/rl78.ld (.csstart): Add a KEEP directive.
+	* rl78/rl78-sim.ld (.csstart): Add a KEEP directive.
+
 2015-03-05  Nick Clifton  <nickc@redhat.com>
 
 	* v850/sim.ld: Add a .note.renesas section.

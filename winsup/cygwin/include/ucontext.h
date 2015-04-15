@@ -1,6 +1,6 @@
-/* cygwin/_types.h
+/* ucontext.h
 
-   Copyright 2004 Red Hat, Inc.
+   Copyright 2015 Red Hat, Inc.
 
 This file is part of Cygwin.
 
@@ -8,9 +8,9 @@ This software is a copyrighted work licensed under the terms of the
 Cygwin license.  Please consult the file "CYGWIN_LICENSE" for
 details. */
 
-#ifndef _CYGWIN__TYPES_H
-#define _CYGWIN__TYPES_H
+#ifndef _UCONTEXT_H
+#define _UCONTEXT_H
 
-typedef void *_flock_t;
+#include <sys/ucontext.h>
 
-#endif	/* _CYGWIN__TYPES_H */
+#endif /* _UCONTEXT_H */

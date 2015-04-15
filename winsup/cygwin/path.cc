@@ -48,6 +48,7 @@
      c: means c:\.
   */
 
+#define _BASENAME_DEFINED
 #include "winsup.h"
 #include "miscfuncs.h"
 #include <ctype.h>
@@ -2036,10 +2037,9 @@ symlink_worker (const char *oldpath, const char *newpath, bool isdevice)
 	  __seterrno_from_nt_status (status);
 	  __leave;
 	}
-      if (win32_newpath.has_acls ())
-	set_file_attribute (fh, win32_newpath, ILLEGAL_UID, ILLEGAL_GID,
-			    (io.Information == FILE_CREATED ? S_JUSTCREATED : 0)
-			    | S_IFLNK | STD_RBITS | STD_WBITS);
+      if (io.Information == FILE_CREATED && win32_newpath.has_acls ())
+	set_created_file_access (fh, win32_newpath,
+				 S_IFLNK | STD_RBITS | STD_WBITS);
       status = NtWriteFile (fh, NULL, NULL, NULL, &io, buf, cp - buf,
 			    NULL, NULL);
       if (NT_SUCCESS (status) && io.Information == (ULONG) (cp - buf))
@@ -4765,6 +4765,33 @@ basename (char *path)
       return buf;
     }
   return path;
+}
+
+/* The differences with the POSIX version above:
+   - declared in <string.h> (instead of <libgen.h>);
+   - the argument is never modified, and therefore is marked const;
+   - the empty string is returned if path is an empty string, "/", or ends
+     with a trailing slash. */
+extern "C" char *
+__gnu_basename (const char *path)
+{
+  static char buf[1];
+  char *c, *d, *bs = (char *)path;
+
+  if (!path || !*path)
+    return strcpy (buf, "");
+  if (isalpha (path[0]) && path[1] == ':')
+    bs += 2;
+  else if (strspn (path, "/\\") > 1)
+    ++bs;
+  c = strrchr (bs, '/');
+  if ((d = strrchr (c ?: bs, '\\')) > c)
+    c = d;
+  if (c)
+    return c + 1;
+  else if (!bs[0])
+    return strcpy (buf, "");
+  return (char *)path;
 }
 
 /* No need to be reentrant or thread-safe according to SUSv3.

@@ -32,6 +32,7 @@ _DEFUN (localtime_r, (tim_p, res),
   ip = __month_lengths[isleap(year)];
 
   TZ_LOCK;
+  _tzset_unlocked ();
   if (_daylight)
     {
       if (year == tz->__tzyear || __tzcalc_limits (year))

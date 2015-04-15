@@ -1428,6 +1428,29 @@ cygheap_domain_info::init ()
   return true;
 }
 
+PDS_DOMAIN_TRUSTSW
+cygheap_domain_info::add_domain (PCWSTR domain, PSID sid)
+{
+  PDS_DOMAIN_TRUSTSW new_tdom;
+  cygsid tsid (sid);
+
+  new_tdom = (PDS_DOMAIN_TRUSTSW) crealloc (tdom, (tdom_count + 1)
+						  * sizeof (DS_DOMAIN_TRUSTSW));
+  if (!new_tdom)
+    return NULL;
+
+  tdom = new_tdom;
+  new_tdom = &tdom[tdom_count];
+  new_tdom->DnsDomainName = new_tdom->NetbiosDomainName = cwcsdup (domain);
+  --*RtlSubAuthorityCountSid (tsid);
+  ULONG len = RtlLengthSid (tsid);
+  new_tdom->DomainSid = cmalloc_abort(HEAP_BUF, len);
+  RtlCopySid (len, new_tdom->DomainSid, tsid);
+  new_tdom->PosixOffset = 0;
+  ++tdom_count;
+  return new_tdom;
+}
+
 /* Per session, so it changes potentially when switching the user context. */
 static cygsid logon_sid ("");
 
@@ -1804,6 +1827,13 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
       fq_name = false;
       /* Copy over to wchar for search. */
       sys_mbstowcs (name, UNLEN + 1, arg.name);
+      /* If the incoming name has a backslash or at sign, and neither backslash
+	 nor at are the domain separator chars, the name is invalid. */
+      if ((p = wcspbrk (name, L"\\@")) && *p != cygheap->pg.nss_separator ()[0])
+	{
+	  debug_printf ("Invalid account name <%s> (backslash/at)", arg.name);
+	  return NULL;
+	}
       /* Replace domain separator char with backslash and make sure p is NULL
 	 or points to the backslash. */
       if ((p = wcschr (name, cygheap->pg.nss_separator ()[0])))
@@ -2135,16 +2165,25 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
 		    if (!wcscasecmp (dom, td->NetbiosDomainName))
 		      {
 			domain = td->DnsDomainName;
-			posix_offset =
-			  fetch_posix_offset (td, &loc_ldap);
 			break;
 		      }
-
 		  if (!domain)
 		    {
+		      /* This shouldn't happen, in theory, but it does.  There
+			 are cases where the user's logon domain does not show
+			 up in the list of trusted domains.  We're desperately
+			 trying to workaround that here bu adding an entry for
+			 this domain to the trusted domains and ask the DC for
+			 a  posix_offset.  There's a good chance this doesn't
+			 work either, but at least we tried, and the user can
+			 work. */
 		      debug_printf ("Unknown domain %W", dom);
-		      return NULL;
+		      td = cygheap->dom.add_domain (dom, sid);
+		      if (td)
+			domain = td->DnsDomainName;
 		    }
+		  if (domain)
+		    posix_offset = fetch_posix_offset (td, &loc_ldap);
 		}
 	    }
 	  /* If the domain returned by LookupAccountSid is not our machine

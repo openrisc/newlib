@@ -703,6 +703,7 @@ _DEFUN (strftime, (s, maxsize, format, tim_p),
   CHAR alt;
   CHAR pad;
   unsigned long width;
+  int tzset_called = 0;
 
   struct lc_time_T *_CurrentTimeLocale = __get_current_time_locale ();
   for (;;)
@@ -1284,6 +1285,13 @@ recurse:
             {
 	      long offset;
 
+	      TZ_LOCK;
+	      if (!tzset_called)
+		{
+		  _tzset_unlocked ();
+		  tzset_called = 1;
+		}
+
 #if defined (__CYGWIN__)
 	      /* Cygwin must check if the application has been built with or
 		 without the extra tm members for backward compatibility, and
@@ -1301,6 +1309,7 @@ recurse:
 		 but have to use __tzrule for daylight savings.  */
 	      offset = -tz->__tzrule[tim_p->tm_isdst > 0].offset;
 #endif
+	      TZ_UNLOCK;
 	      len = snprintf (&s[count], maxsize - count, CQ("%+03ld%.2ld"),
 			      offset / SECSPERHOUR,
 			      labs (offset / SECSPERMIN) % 60L);
@@ -1311,18 +1320,23 @@ recurse:
 	  if (tim_p->tm_isdst >= 0)
 	    {
 	      size_t size;
-	      const char *tznam;
+	      const char *tznam = NULL;
 
 	      TZ_LOCK;
+	      if (!tzset_called)
+		{
+		  _tzset_unlocked ();
+		  tzset_called = 1;
+		}
 #if defined (__CYGWIN__)
 	      /* See above. */
 	      extern const char *__cygwin_gettzname (const struct tm *tmp);
 	      tznam = __cygwin_gettzname (tim_p);
 #elif defined (__TM_ZONE)
 	      tznam = tim_p->__TM_ZONE;
-#else
-	      tznam = _tzname[tim_p->tm_isdst > 0];
 #endif
+	      if (!tznam)
+		tznam = _tzname[tim_p->tm_isdst > 0];
 	      /* Note that in case of wcsftime this loop only works for
 	         timezone abbreviations using the portable codeset (aka ASCII).
 		 This seems to be the case, but if that ever changes, this

@@ -1,3 +1,106 @@
+2015-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* libc/machine/rx/memchr.S: Add non-string insn using version.
+	* libc/machine/rx/memcpy.S: Likewise.
+	* libc/machine/rx/memmove.S: Likewise.
+	* libc/machine/rx/mempcpy.S: Likewise.
+	* libc/machine/rx/strcat.S: Likewise.
+	* libc/machine/rx/strcmp.S: Likewise.
+	* libc/machine/rx/strcpy.S: Likewise.
+	* libc/machine/rx/strlen.S: Likewise.
+	* libc/machine/rx/strncat.S: Likewise.
+	* libc/machine/rx/strncmp.S: Likewise.
+	* libc/machine/rx/strncpy.S: Likewise.
+
+2015-04-01  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/include/stdint.h: Throughout add parens around MIN/MAX values.
+
+2015-04-01  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/_stdint.h: New file.
+	* libc/include/stdint.h (int8_t): Move to <sys/_stdint.h>.
+	(uint8_t): Likewise.
+	(int16_t): Likewise.
+	(uint16_t): Likewise.
+	(int32_t): Likewise.
+	(uint32_t): Likewise.
+	(int64_t): Likewise.
+	(uint64_t): Likewise.
+	(intptr_t): Likewise.
+	(uintptr_t): Likewise.
+	* libc/include/sys/types.h: Include <sys/_stdint.h>.
+	* libc/sys/rtems/machine/_types.h: Remove <stdint.h> include.
+	* libc/sys/time.h>: Replace __uint32_t with uint32_t and
+	__uint64_t with uint64_t.
+
+2015-04-01  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* libc/include/sys/signal.h (stack_t): Make typedef generally
+	available.
+
+2015-04-01  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/stdlib/wctomb_r.c (__utf8_wctomb): Fix check for handling a
+	lone high surrogate.
+
+2015-03-31  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/time/lcltime_r.c (localtime_r): Call _tzset_unlocked inside
+	TZ lock.
+	* libc/time/mktime.c (mktime):  Ditto.
+	* libc/time/strftime.c (strftime, wcsftime): Ditto.  Guard against
+	calling _tzset_unlocked more than once (baring recursion).
+
+2015-03-31  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/time/local.h (_tzset_unlocked_r): Add prototype.
+	(_tzset_unlocked): Ditto.
+	* libc/time/tzset.c (_tzset_unlocked): New function, call
+	_tzset_unlocked_r.
+	(tzset): Lock and call _tzset_unlocked_r.
+	* libc/time/tzset_r (_tzset_unlocked_r): Remove locking and rename
+	from _tzset_r.
+	(_tzset_r): Lock and call _tzset_unlocked_r.
+
+2015-03-30  Craig Howland  <howland@LGSInnovations.com>
+
+	* libc/stdlib/setenv_r.c (_setenv_r): Remove tzset() call for TZ
+	definition.
+	* libc/time/lcltime_r.c (localtime_r): Add tzset() call
+	* libc/time/mktime.c (mktime):  Ditto.
+	* libc/time/strftime.c (strftime, wcsftime): Ditto.
+
+2015-03-30  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* libc/time/strftime.c (strftime) <%Z>: Initialize tznam to NULL.
+	Use _tzname as fallback if TM_ZONE is NULL.
+
+2015-03-30  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* libc/include/libgen.h (_BASENAME_DEFINED): Define.
+	* libc/include/string.h (basename): Declare.
+	* libc/string/Makefile.am (ELIX_4_SOURCES): Add gnu_basename.c.
+	* libc/string/Makefile.in: Regenerate.
+	* libc/string/gnu_basename.c: New file.
+
+2015-03-23  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/tree.h: New file.
+
+2013-03-23  Joel Sherrill <joel.sherrill@oarcorp.com>
+
+	* newlib.hin: Remove _UINTPTR_EQ_ULONG and _UINTPTR_EQ_ULONGLONG.
+
+2015-03-23  Joel Sherrill <joel.sherrill@oarcorp.com
+
+	* configure.in: Delete logic to determine _UINTPTR_EQ_ULONGLONG
+	and _UINTPTR_EQ_ULONG at configuration time.
+	*libc/include/sys/config.h: Add logic to determine
+	_UINTPTR_EQ_ULONGLONG and _UINTPTR_EQ_ULONG at compilation time.
+	* libc/include/inttypes.h: Add include of <sys/config.h>.
+	* configure: Regenerated.
+
 2015-03-19  Steve Ellcey  <sellcey@imgtec.com>
 
 	* libc/include/sys/time.h: Replace uint32_t and uint64_t

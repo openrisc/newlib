@@ -401,11 +401,16 @@ get_object_attribute (HANDLE handle, uid_t *uidret, gid_t *gidret,
 		      mode_t *attribute)
 {
   security_descriptor sd;
+  mode_t attr = S_IFCHR;
 
   if (get_object_sd (handle, sd))
     return -1;
-  return get_posix_access (sd, attribute, uidret, gidret, NULL, 0) >= 0
-	 ? 0 : -1;
+  if (attribute)
+    *attribute |= S_IFCHR;
+  else
+    attribute = &attr;
+  return get_posix_access (sd, attribute, uidret, gidret, NULL, 0)
+	 >= 0 ? 0 : -1;
 }
 
 int
@@ -463,19 +468,34 @@ set_created_file_access (HANDLE handle, path_conv &pc, mode_t attr)
       if ((nentries = get_posix_access (sd, &attr_rd, &uid, &gid,
 					aclp, MAX_ACL_ENTRIES)) >= 0)
 	{
-	  /* Symlinks always get the request POSIX perms. */
 	  if (S_ISLNK (attr))
-	    attr_rd = 0777;
-	  /* Overwrite ACL permissions as required by POSIX 1003.1e
-	     draft 17. */
-	  aclp[0].a_perm = ((attr & attr_rd) >> 6) & S_IRWXO;
-	  if (nentries > MIN_ACL_ENTRIES
-	      && (idx = searchace (aclp, nentries, CLASS_OBJ)) >= 0)
-	    aclp[idx].a_perm = ((attr & attr_rd) >> 3) & S_IRWXO;
+	    {
+	      /* Symlinks always get the request POSIX perms. */
+	      aclp[0].a_perm = (attr >> 6) & S_IRWXO;
+	      if ((idx = searchace (aclp, nentries, GROUP_OBJ)) >= 0)
+		aclp[idx].a_perm = (attr >> 3) & S_IRWXO;
+	      if (nentries > MIN_ACL_ENTRIES
+		  && (idx = searchace (aclp, nentries, CLASS_OBJ)) >= 0)
+		aclp[idx].a_perm = (attr >> 3) & S_IRWXO;
+	      if ((idx = searchace (aclp, nentries, OTHER_OBJ)) >= 0)
+		aclp[idx].a_perm = attr & S_IRWXO;
+	    }
 	  else
-	    aclp[1].a_perm = ((attr & attr_rd) >> 3) & S_IRWXO;
-	  if ((idx = searchace (aclp, nentries, OTHER_OBJ)) >= 0)
-	    aclp[idx].a_perm = (attr & attr_rd) & S_IRWXO;
+	    {
+	      /* Overwrite ACL permissions as required by POSIX 1003.1e
+		 draft 17. */
+	      aclp[0].a_perm &= (attr >> 6) & S_IRWXO;
+	      /* Deliberate deviation from POSIX 1003.1e here.  We're not
+		 writing CLASS_OBJ *or* GROUP_OBJ, but both.  Otherwise we're
+		 going to be in constant trouble with user expectations. */
+	      if ((idx = searchace (aclp, nentries, GROUP_OBJ)) >= 0)
+		aclp[idx].a_perm &= (attr >> 3) & S_IRWXO;
+	      if (nentries > MIN_ACL_ENTRIES
+		  && (idx = searchace (aclp, nentries, CLASS_OBJ)) >= 0)
+		aclp[idx].a_perm &= (attr >> 3) & S_IRWXO;
+	      if ((idx = searchace (aclp, nentries, OTHER_OBJ)) >= 0)
+		aclp[idx].a_perm &= attr & S_IRWXO;
+	    }
 	  /* Construct appropriate inherit attribute for new directories.
 	     Basically we do this only for the sake of non-Cygwin applications.
 	     Cygwin applications don't need these.  Additionally, if the
@@ -657,10 +677,10 @@ convert_samba_sd (security_descriptor &sd_ret)
 		if (gid < UNIX_POSIX_OFFSET && (grp = internal_getgrgid (gid)))
 		  ace_sid.getfromgr (grp);
 	      }
-	    if (!add_access_allowed_ace (acl, ace->Mask, ace_sid, acl_len,
-					 ace->Header.AceFlags))
-	      return;
 	  }
+	if (!add_access_allowed_ace (acl, ace->Mask, ace_sid, acl_len,
+				     ace->Header.AceFlags))
+	  return;
       }
   acl->AclSize = acl_len;
 

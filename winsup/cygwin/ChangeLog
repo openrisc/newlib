@@ -1,3 +1,180 @@
+2015-05-03  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cygwin/version.h (CYGWIN_VERSION_DLL_MINOR): Bump to 2.
+
+2015-04-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/cygwin/version.h (CYGWIN_VERSION_DLL_MINOR): Bump to 1.
+
+2015-04-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* security.cc (convert_samba_sd): Fix accidental dropping of all
+	non-Unix User, non-Unix Group accounts.
+
+2015-04-27  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/asm/types.h: Add __s64 and __u64 types.
+
+2015-04-23  Corinna Vinschen  <corinna@vinschen.de>
+
+	* path.cc (path_conv::set_nt_native_path): New function.
+	* path.h (path_conv::set_nt_native_path): Add prototype.
+	* syscall.cc (try_to_bin): Handle moving files to the recycler
+	accessed via a local virtual drive (subst).  Fix a problem renaming
+	the file to the unique replacement name on Samba.  Align comment.
+
+2015-04-22  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler_tty.cc (fhandler_pty_slave::fch_close_handles): Don't close
+	handles not opened via fhandler_pty_slave::fch_open_handles.
+
+2015-04-22  Takashi Yano  <takashi.yano@nifty.ne.jp>
+
+	* fhandler.h (class fhandler_base): Add virtual function
+	get_io_handle_cyg() to get handle from which OPOST-processed output is
+	read on PTY master.
+	(class fhandler_pty_slave): Add variable output_handle_cyg to store a
+	handle to which OPOST-processed output is written. Add two functions,
+	i.e., set_output_handle_cyg() and get_output_handle_cyg(), regarding
+	variable output_handle_cyg. Now, output_handle is used only by native
+	windows program. The data before OPOST-processing is written to
+	output_handle and OPOST-processing is applied in the master-side. For a
+	cygwin process, OPOST-processing is applied in the slave-side, and the
+	data after OPOST-processing is written to output_handle_cyg.
+	(class fhandler_pty_master): Add two variables, i.e., io_handle_cyg and
+	to_master_cyg, to store handles of a pipe through which OPOST-processed
+	output passes. Add pty_master_fwd_thread and function
+	pty_master_fwd_thread() for a thread which applies OPOST-processing
+	and forwards data from io_handle to to_master_cyg. Add function
+	get_io_handle_cyg() regarding variable io_handle_cyg. Now, the pipe
+	between io_handle and to_master are used only by native windows program
+	for applying OPOST-processing in the master-side. For a cygwin process,
+	the pipe between io_handle_cyg and to_master_cyg is used for passing
+	through the data which is applied OPOST-processing in the slave-side.
+	* fhandler_tty.cc (struct pipe_reply): Add member to_master_cyg.
+	(fhandler_pty_master::process_slave_output): Read slave output from
+	io_handle_cyg rather than io_handle.
+	(fhandler_pty_slave::fhandler_pty_salve): Initialize output_handle_cyg.
+	(fhandler_pty_slave::open): Set output_handle_cyg by duplicating handle
+	to_master_cyg on PTY master.
+	(fhandler_pty_slave::close): Close handle output_handle_cyg.
+	(fhandler_pty_slave::write): Write data to output_handle_cyg rather
+	than output_handle.
+	(fhandler_pty_slave::fch_close_handles): Close handle output_handle_cyg.
+	(fhandler_pty_master::fhandler_pty_master): Initialize io_handle_cyg,
+	to_master_cyg and master_fwd_thread.
+	(fhandler_pty_master::cleanup): Clean up to_master_cyg as well.
+	(fhandler_pty_master::close): Print to_master_cyg as well in debug
+	message. Terminate master forwarding thread. Close handles
+	to_master_cyg and io_handle_cyg.
+	(fhandler_pty_master::ioctl): Use io_handle_cyg rather than to_master.
+	(fhandler_pty_master::pty_master_thread): Add code for duplicating
+	handle to_master_cyg.
+	(fhandler_pty_master::pty_master_fwd_thread): New function for a thread
+	to forward OPOST-processed data from io_handle to to_master_cyg.  This
+	thread applies OPOST-processing to the output of native windows program.
+	(::pty_master_fwd_thread): Ditto.
+	(fhandler_pty_master::setup): Create a new pipe to pass thruegh OPOST-
+	processed output. Create new thread to forward data from io_handle to
+	to_master_cyg. Set handle to_master_cyg to tty. Print io_handle_cyg as
+	well in debug message. Close handles io_handle_cyg and to_master_cyg in
+	case of error.
+	(fhandler_pty_master::fixup_after_fork): Set handle to_master_cyg to
+	tty. Copy handle to_master_cyg from arch->to_master_cyg.
+	(fhandler_pty_master::fixup_after_exec): Clean up to_master_cyg.
+	* select.cc: Check handle returned by get_io_handle_cyg() rather than
+	get_handle().
+	* tty.h (class tty): Add variable _to_master_cyg to store a handle to
+	which OPOST-processed data is written. Add two functions,
+	to_master_cyg() and set_to_master_cyg(), regarding _to_master_cyg.
+
+2015-04-22  Corinna Vinschen  <corinna@vinschen.de>
+
+	* path.cc (basename): Undefine basename before defining function to
+	avoid type collision with prototype in string.h.
+
+2015-04-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/libgen.h: Remove in favor of newlib version.
+
+2015-04-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (get_posix_access): Check for Cygwin "standard" ACL.
+	Apply umask, if so.  Align comments.
+	* security.cc (set_created_file_access): Fix permission masking by
+	incoming requested file mode.
+
+2015-04-20  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Apply mask only in terms of execute bit
+	for SYSTEM and Admins group.
+
+2015-04-17  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Don't create DENY ACEs for USER and
+	GROUP entries if they are the same as USER_OBJ or GROUP_OBJ.
+
+2015-04-17  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler.h (fhandler_pty_slave::facl): Add prototype.
+	* fhandler_tty.cc (fhandler_pty_slave::facl): New method.
+	(fhandler_pty_slave::fchown): Fix uid/gid handling.
+	* sec_acl.cc (set_posix_access): Drop superfluous class_idx variable.
+	Simplify and move around code in a few places.  To improve ACL
+	readability, add r/w permissions to Admins ACE appended to pty ACL.
+	Add comment to explain Windows ACE Mask filtering being in the way of
+	creating a real CLASS_OBJ.
+	(get_posix_access): Fake CLASS_OBJ for ptys.  Explain why.
+	* security.cc (get_object_attribute): Add S_IFCHR flag to attributes
+	when calling get_posix_access.
+
+2015-04-17  Corinna Vinschen  <corinna@vinschen.de>
+
+	* uinfo.cc (pwdgrp::fetch_account_from_windows): Always revert SID
+	subauth count after checking for known domain.
+
+2015-04-17  Corinna Vinschen  <corinna@vinschen.de>
+
+	* pwdgrp.h: Add comment to explain below change.
+	(struct pg_pwd): Convert sid member to BYTE array.
+	(struct pg_grp): Ditto.
+	* grp.cc (pwdgrp::parse_group): Accommodate above change.
+	* passwd.cc (pwdgrp::parse_passwd): Ditto.
+
+2015-04-16  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Move merging group perms into owner
+	perms in case of owner == group after mask has been computed.  Take
+	mask into account when doing so to avoid unnecessary ACCESS_DENIED_ACE.
+
+2015-04-16  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (get_posix_access): Only set saw_group_obj flag if we saw
+	the ACCESS_ALLOWED_ACE.
+
+2015-04-16  Corinna Vinschen  <corinna@vinschen.de>
+
+	* fhandler_disk_file.cc (fhandler_disk_file::fchmod): Deliberatly
+	set GROUP_OBJ and CLASS_OBJ perms to new group perms.  Add comment
+	to explain why.
+	* security.cc (set_created_file_access): Ditto.
+
+2015-04-16  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Replace previous patch.  Return
+	EINVAL if uid and/or guid is invalid and not backed by an actual
+	Windows account.
+
+2015-04-16  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Workaround owner/group SIDs being NULL.
+
+2015-04-15  Corinna Vinschen  <corinna@vinschen.de>
+
+	* sec_acl.cc (set_posix_access): Handle files with owner == group.
+	Rephrase switch statement checking against unfiltered a_type value.
+	(get_posix_access): Handle files with owner == group.
+
 2015-04-14  Corinna Vinschen  <corinna@vinschen.de>
 
 	* sec_acl.cc (get_posix_access): Don't use GROUP_OBJ access to fix up

@@ -1,3 +1,32 @@
+2015-05-13  Nick Clifton  <nickc@redhat.com>
+
+	* libm/common/s_signbit.c (__signbitf): Fix for 16-bit targets.
+	(__signbitd): Likewise.
+
+2015-05-02  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/include/sys/time.h: Include sys/select.h on Cygwin.  Explain why.
+
+2015-04-29  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/include/sys/config.h: Move evaluation of _UINTPTR_EQ_ULONG and
+	_UINTPTR_EQ_ULONGLONG from here...
+	* libc/include/sys/_intsup.h: ...to here.  Rename to _INTPTR_EQ_LONG
+	and _INTPTR_EQ_LONGLONG to refer to signed base type.  Add test for
+	base type of int32_t and set _INT32_EQ_LONG accordingly.
+	* libc/include/stdint.h: Change checks for __have_long32 to checks
+	for _INT32_EQ_LONG.
+	* libc/include/inttypes.h: Ditto.  Accommodate aforementioned name
+	change.
+
+2015-04-22  Corinna Vinschen  <vinschen@redhat.com>
+
+	* libc/include/libgen.h (basename): Drop defining _BASENAME_DEFINED.
+	Always define macro basename.  Add comment to explain why.
+	* libc/include/string.h (basename): Check for basename instead of
+	_BASENAME_DEFINED.  Drop __GNUC__ branch, always use basename macro.
+	Change comment to explain why.  Add nonnull function attribute.
+
 2015-04-09  Nick Clifton  <nickc@redhat.com>
 
 	* libc/machine/rx/memchr.S: Add non-string insn using version.

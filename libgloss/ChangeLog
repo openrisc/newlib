@@ -1,3 +1,57 @@
+2015-08-04  Nick Clifton  <nickc@redhat.com>
+
+	* rl78/rl78-sim.ld: Provide a value for __rl78_abs__.
+	* rl78/rl78.ld: Likewise.
+
+2015-07-14  Andre Vieira  <andre.simoesdiasvieira@arm.com\>
+
+	* arm/elf-nano.specs: Added option to search for system headers in
+	newlib-nano directory.
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/impure.c: Fix initialization of impure ptr
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/boards/optimsoc.S: Heap for gzll kernel
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/sbrk.c: Allow for different heap start
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/or1k_uart.c: Fix interrupts
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/timer.c: Properly set interrupt flags
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/exception-asm.S: Store missing state
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/crt0.S: Fix exception stack frame
+	* or1k/exception-asm.S: ditto
+
+2015-05-26  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
+
+	* or1k/interruts-asm.S: Change registers to callee-saved.
+
+2015-05-18  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/msp430-sim.ld (.stack): Add an assertion to make sure
+	that the data area does not overrun the stack.  PROVIDE a new
+	symbol __stack_size to allow the user to set the limit.
+	* msp430/msp430xl-sim.ld (.stack): Likewise.
+	* rl78/rl78-sim.ld (.stack): Likewise.
+	* rl78/rl78.ld (.stack): Likewise.
+	* rx/rx-sim.ld (.stack): Likewise.
+	* rx/rx.ld (.stack): Likewise.
+
 2015-05-05  Nick Clifton  <nickc@redhat.com>
 
 	* msp430/msp430.ld: Delete.

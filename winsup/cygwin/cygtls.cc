@@ -125,6 +125,7 @@ _cygtls::init_thread (void *x, DWORD (*func) (void *, void *))
       memset (this, 0, sizeof (*this));
       _REENT_INIT_PTR (&local_clib);
       stackptr = stack;
+      altstack.ss_flags = SS_DISABLE;
       if (_GLOBAL_REENT)
 	{
 	  local_clib._stdin = _GLOBAL_REENT->_stdin;
@@ -223,5 +224,6 @@ void san::leave ()
 {
   /* Restore tls_pathbuf counters in case of error. */
   _my_tls.locals.pathbufs._counters = _cnt;
+  _my_tls.andreas = _clemente;
 }
 #endif

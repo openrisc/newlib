@@ -463,7 +463,7 @@ fhandler_base::open_with_arch (int flags, mode_t mode)
 {
   int res;
   if (!(res = (archetype && archetype->io_handle)
-	|| open (flags, mode & 07777)))
+	|| open (flags, (mode & 07777) & ~cygheap->umask)))
     {
       if (archetype)
 	delete archetype;
@@ -662,10 +662,9 @@ fhandler_base::open (int flags, mode_t mode)
 					     + p->EaNameLength + 1);
 	      memset (nfs_attr, 0, sizeof (fattr3));
 	      nfs_attr->type = NF3REG;
-	      nfs_attr->mode = (mode & 07777) & ~cygheap->umask;
+	      nfs_attr->mode = mode;
 	    }
-	  else if (!has_acls ()
-		   && !(mode & ~cygheap->umask & (S_IWUSR | S_IWGRP | S_IWOTH)))
+	  else if (!has_acls () && !(mode & (S_IWUSR | S_IWGRP | S_IWOTH)))
 	    /* If mode has no write bits set, and ACLs are not used, we set
 	       the DOS R/O attribute. */
 	    file_attributes |= FILE_ATTRIBUTE_READONLY;
@@ -717,7 +716,7 @@ fhandler_base::open (int flags, mode_t mode)
      This is the result of a discussion on the samba-technical list, starting at
      http://lists.samba.org/archive/samba-technical/2008-July/060247.html */
   if (io.Information == FILE_CREATED && has_acls ())
-    set_created_file_access (fh, pc, mode);
+    set_file_attribute (fh, pc, ILLEGAL_UID, ILLEGAL_GID, S_JUSTCREATED | mode);
 
   /* If you O_TRUNC a file on Linux, the data is truncated, but the EAs are
      preserved.  If you open a file on Windows with FILE_OVERWRITE{_IF} or

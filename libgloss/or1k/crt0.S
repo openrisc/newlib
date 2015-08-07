@@ -68,7 +68,6 @@
 
 #define REDZONE 128
 
-
 	.extern _or1k_stack_top    /* points to the next address after the stack */
 	.extern _or1k_stack_bottom /* points to the last address in the stack */
 	.extern _or1k_exception_stack_top

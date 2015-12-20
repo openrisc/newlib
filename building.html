@@ -94,9 +94,10 @@ and a lot more programs to handle the binary files for a certain
 architecture. Those can be directly built standalone:</p>
 
 <pre><code>mkdir build-binutils; cd build-binutils
-$ ../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
-$ make
-$ make install
+../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
+make
+make install
+cd ..
 </code></pre>
 
 <h3>GCC stage 1</h3>
@@ -104,30 +105,33 @@ $ make install
 <p>GCC is built in two stages. First we now need the basic C compiler
 to build the C library in the next step:</p>
 
-<pre><code>$ mkdir build-gcc-stage1; cd build-gcc-stage1
-$ ../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c --disable-shared --disable-libssp
-$ make
-$ make install
+<pre><code>mkdir build-gcc-stage1; cd build-gcc-stage1
+../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c --disable-shared --disable-libssp
+make
+make install
+cd ..
 </code></pre>
 
 <h3>Newlib</h3>
 
 <p>Now we can build the newlib C library:</p>
 
-<pre><code>$ mkdir build-newlib; cd build-newlib
-$ ../newlib/configure --target=or1k-elf --prefix=$PREFIX
-$ make
-$ make install
+<pre><code>mkdir build-newlib; cd build-newlib
+../newlib/configure --target=or1k-elf --prefix=$PREFIX
+make
+make install
+cd ..
 </code></pre>
 
 <h3>GCC stage 2</h3>
 
 <p>Now we can build the entire GCC and tell it about using newlib:</p>
 
-<pre><code>$ mkdir build-gcc-stage2; cd build-gcc-stage2
-$ ../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c,c++ --disable-shared --disable-libssp --with-newlib
-$ make
-$ make install
+<pre><code>mkdir build-gcc-stage2; cd build-gcc-stage2
+../gcc/configure --target=or1k-elf --prefix=$PREFIX --enable-languages=c,c++ --disable-shared --disable-libssp --with-newlib
+make
+make install
+cd ..
 </pre></code>
 
 <h3>GDB</h3>
@@ -135,10 +139,11 @@ $ make install
 <p>In the last step, we can now build <tt>gdb</tt> for our
 architecture:</p>
 
-<pre><code>$ mkdir build-gdb; cd build-gdb
-$ ../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --enable-sim --disable-or1ksim --enable-gdb  --with-sysroot --disable-newlib --disable-libgloss
-$ make
-$ make install
+<pre><code>mkdir build-gdb; cd build-gdb
+../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --enable-sim --disable-or1ksim --enable-gdb  --with-sysroot --disable-newlib --disable-libgloss
+make
+make install
+cd ..
 </code></pre>
 
 <p>Now you are done and have the

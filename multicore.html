@@ -41,9 +41,10 @@
 implementations. There is a toolchain that can execute code on
 multiple cores in a symmetric fashion.</p>
 
-<p>If you build the toolchain manually, you need to build newlib with the environment variable <tt>CFLAGS="-D__OR1K_MULTICORE__"</tt>:</p>
+<p>If you build the toolchain manually, you need to build newlib with
+the environment variable <tt>CFLAGS="-D__OR1K_MULTICORE__"</tt>:</p>
 
-<pre><code>$ ../newlib/configure --target=or1k-elf --prefix=$PREFIX CFLAGS="-D__OR1K_MULTICORE__"
+<pre><code>../newlib/configure --target=or1k-elf --prefix=$PREFIX CFLAGS="-D__OR1K_MULTICORE__"
 </code></pre>
 
 

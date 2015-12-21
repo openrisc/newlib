@@ -21,7 +21,7 @@ env:
 
 before_install:
   - cd $HOME
-  - mkdir build; cd build
+  - mkdir build-or1k-elf && cd build-or1k-elf
   - git clone -b scripts https://github.com/openrisc/newlib .
 
 script:

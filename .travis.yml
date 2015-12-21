@@ -1,0 +1,28 @@
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - build-essential
+    - libgmp-dev
+    - libmpfr-dev
+    - libmpc-dev
+    - zlib1g-dev
+    - texinfo
+    - flex
+    - bison
+
+env:
+  global:
+   - NEWLIB_CHECKOUT=$TRAVIS_BUILD_DIR
+  matrix:
+   - PREFIX=/tmp/or1k-elf
+   - PREFIX=/tmp/or1k-elf BUILD_MULTICORE=1
+
+before_install:
+  - cd $HOME
+  - mkdir build; cd build
+  - git clone -b scripts https://github.com/openrisc/newlib .
+
+script:
+  - ./build.sh

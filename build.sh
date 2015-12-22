@@ -1,30 +1,36 @@
 #!/bin/bash -e
 
+# Where to install the toolchain
 if [ "x$PREFIX" == "x" ]; then
     export PREFIX=/opt/toolchains/or1k-elf
 fi
 
+# We need the previously installed tools
 export PATH=$PATH:$PREFIX/bin
 
+# Log output
 if [ "x$LOG" == "x" ]; then
     export LOG=build.log
 fi
 
+# Build mutlticore variant
 if [ "x$BUILD_MULTICORE" == "x" ]; then
     export CFLAGS_PARAM=""
 else
     export CFLAGS_PARAM="CFLAGS=-D__OR1K_MULTICORE__"
 fi
 
+# Location of newlib repository
 if [ "x$NEWLIB_CHECKOUT" == "x" ]; then
     git clone git://sourceware.org/git/newlib-cygwin.git newlib
     export NEWLIB_CHECKOUT=$PWD/newlib
 fi
 
-
+# Clone binutils & GCC repositories
 git clone git://sourceware.org/git/binutils-gdb.git
 git clone https://github.com/openrisc/or1k-gcc.git gcc
 
+# Build!
 echo "++ build binutils"
 mkdir build-binutils; cd build-binutils
 ../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib > $LOG

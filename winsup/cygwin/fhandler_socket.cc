@@ -746,7 +746,13 @@ fhandler_socket::wait_for_events (const long event_mask, const DWORD flags)
     return 0;
 
   int ret;
-  long events;
+  long events = 0;
+
+  WSAEVENT ev[3] = { wsock_evt, NULL, NULL };
+  wait_signal_arrived here (ev[1]);
+  DWORD ev_cnt = 2;
+  if ((ev[2] = pthread::get_cancel_event ()) != NULL)
+    ++ev_cnt;
 
   while (!(ret = evaluate_events (event_mask, events, !(flags & MSG_PEEK)))
 	 && !events)
@@ -757,14 +763,9 @@ fhandler_socket::wait_for_events (const long event_mask, const DWORD flags)
 	  return SOCKET_ERROR;
 	}
 
-      WSAEVENT ev[2] = { wsock_evt };
-      set_signal_arrived here (ev[1]);
-      switch (WSAWaitForMultipleEvents (2, ev, FALSE, 50, FALSE))
+      switch (WSAWaitForMultipleEvents (ev_cnt, ev, FALSE, 50, FALSE))
 	{
 	  case WSA_WAIT_TIMEOUT:
-	    pthread_testcancel ();
-	    break;
-
 	  case WSA_WAIT_EVENT_0:
 	    break;
 
@@ -774,8 +775,11 @@ fhandler_socket::wait_for_events (const long event_mask, const DWORD flags)
 	    WSASetLastError (WSAEINTR);
 	    return SOCKET_ERROR;
 
+	  case WSA_WAIT_EVENT_0 + 2:
+	    pthread::static_cancel_self ();
+	    break;
+
 	  default:
-	    pthread_testcancel ();
 	    /* wsock_evt can be NULL.  We're generating the same errno values
 	       as for sockets on which shutdown has been called. */
 	    if (WSAGetLastError () != WSA_INVALID_HANDLE)
@@ -1065,10 +1069,10 @@ fhandler_socket::bind (const struct sockaddr *name, int namelen)
       sin.sin_port = ntohs (sin.sin_port);
       debug_printf ("AF_LOCAL: socket bound to port %u", sin.sin_port);
 
-      mode_t mode = adjust_socket_file_mode ((S_IRWXU | S_IRWXG | S_IRWXO)
-					     & ~cygheap->umask);
+      mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
       DWORD fattr = FILE_ATTRIBUTE_SYSTEM;
-      if (!(mode & (S_IWUSR | S_IWGRP | S_IWOTH)) && !pc.has_acls ())
+      if (!pc.has_acls ()
+	  && !(mode & ~cygheap->umask & (S_IWUSR | S_IWGRP | S_IWOTH)))
 	fattr |= FILE_ATTRIBUTE_READONLY;
       SECURITY_ATTRIBUTES sa = sec_none_nih;
       NTSTATUS status;
@@ -1086,7 +1090,7 @@ fhandler_socket::bind (const struct sockaddr *name, int namelen)
 	 I don't know what setting that is or how to recognize such a share,
 	 so for now we don't request WRITE_DAC on remote drives. */
       if (pc.has_acls () && !pc.isremote ())
-	access |= READ_CONTROL | WRITE_DAC;
+	access |= READ_CONTROL | WRITE_DAC | WRITE_OWNER;
 
       status = NtCreateFile (&fh, access, pc.get_object_attr (attr, sa), &io,
 			     NULL, fattr, 0, FILE_CREATE,
@@ -1104,8 +1108,7 @@ fhandler_socket::bind (const struct sockaddr *name, int namelen)
       else
 	{
 	  if (pc.has_acls ())
-	    set_file_attribute (fh, pc, ILLEGAL_UID, ILLEGAL_GID,
-				S_JUSTCREATED | mode);
+	    set_created_file_access (fh, pc, mode);
 	  char buf[sizeof (SOCKET_COOKIE) + 80];
 	  __small_sprintf (buf, "%s%u %c ", SOCKET_COOKIE, sin.sin_port,
 			   get_socket_type () == SOCK_STREAM ? 's'
@@ -1160,7 +1163,7 @@ int
 fhandler_socket::connect (const struct sockaddr *name, int namelen)
 {
   struct sockaddr_storage sst;
-  int type;
+  int type = 0;
 
   if (get_inet_addr (name, namelen, &sst, &namelen, &type, connect_secret)
       == SOCKET_ERROR)

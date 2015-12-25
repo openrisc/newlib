@@ -91,23 +91,12 @@ enum path_types
 };
 
 class symlink_info;
-struct _FILE_NETWORK_OPEN_INFORMATION;
 
 class path_conv_handle
 {
   HANDLE      hdl;
   union {
-    /* Identical to FILE_NETWORK_OPEN_INFORMATION.  We don't want to pull in
-       ntdll.h here, though. */
-    struct {
-      LARGE_INTEGER CreationTime;
-      LARGE_INTEGER LastAccessTime;
-      LARGE_INTEGER LastWriteTime;
-      LARGE_INTEGER ChangeTime;
-      LARGE_INTEGER AllocationSize;
-      LARGE_INTEGER EndOfFile;
-      ULONG FileAttributes;
-    } _fnoi;
+    FILE_ALL_INFORMATION _fai;
     /* For NFS. */
     fattr3 _fattr3;
   } attribs;
@@ -128,8 +117,8 @@ public:
       hdl = NULL;
   }
   inline HANDLE handle () const { return hdl; }
-  inline struct _FILE_NETWORK_OPEN_INFORMATION *fnoi ()
-  { return (struct _FILE_NETWORK_OPEN_INFORMATION *) &attribs._fnoi; }
+  inline PFILE_ALL_INFORMATION fai ()
+  { return (PFILE_ALL_INFORMATION) &attribs._fai; }
   inline struct fattr3 *nfsattr ()
   { return (struct fattr3 *) &attribs._fattr3; }
 };
@@ -169,6 +158,7 @@ class path_conv
   int has_buggy_reopen () const {return fs.has_buggy_reopen ();}
   int has_buggy_fileid_dirinfo () const {return fs.has_buggy_fileid_dirinfo ();}
   int has_buggy_basic_info () const {return fs.has_buggy_basic_info ();}
+  int has_broken_fnoi () const {return fs.has_broken_fnoi ();}
   int binmode () const
   {
     if (path_flags & PATH_BINARY)
@@ -375,6 +365,7 @@ class path_conv
   bool fs_is_nwfs () const {return fs.is_nwfs ();}
   bool fs_is_ncfsd () const {return fs.is_ncfsd ();}
   bool fs_is_afs () const {return fs.is_afs ();}
+  bool fs_is_prlfs () const {return fs.is_prlfs ();}
   fs_info_type fs_type () const {return fs.what_fs ();}
   ULONG fs_serial_number () const {return fs.serial_number ();}
   inline const char *set_path (const char *p)
@@ -388,15 +379,12 @@ class path_conv
   bool is_binary ();
 
   HANDLE handle () const { return conv_handle.handle (); }
-  struct _FILE_NETWORK_OPEN_INFORMATION *fnoi () { return conv_handle.fnoi (); }
+  PFILE_ALL_INFORMATION fai () { return conv_handle.fai (); }
   struct fattr3 *nfsattr () { return conv_handle.nfsattr (); }
   void reset_conv_handle () { conv_handle.set (NULL); }
   void close_conv_handle () { conv_handle.close (); }
 
   ino_t get_ino_by_handle (HANDLE h);
-#if 0 /* obsolete, method still exists in fhandler_disk_file.cc */
-  unsigned __stdcall ndisk_links (DWORD);
-#endif
   inline const char *get_posix () const { return posix_path; }
   void __reg2 set_posix (const char *);
   DWORD get_symlink_length () { return symlink_length; };
@@ -445,7 +433,7 @@ bool __reg2 has_dot_last_component (const char *dir, bool test_dot_dot);
 int __reg3 path_prefix_p (const char *path1, const char *path2, int len1,
 		   bool caseinsensitive);
 
-NTSTATUS file_get_fnoi (HANDLE, bool, struct _FILE_NETWORK_OPEN_INFORMATION *);
+NTSTATUS file_get_fai (HANDLE, PFILE_ALL_INFORMATION);
 int normalize_win32_path (const char *, char *, char *&);
 int normalize_posix_path (const char *, char *, char *&);
 PUNICODE_STRING __reg3 get_nt_native_path (const char *, UNICODE_STRING&, bool);

@@ -532,7 +532,8 @@ typedef enum _PROCESSINFOCLASS
   ProcessTimes = 4,
   ProcessSessionInformation = 24,
   ProcessWow64Information = 26,
-  ProcessImageFileName = 27
+  ProcessImageFileName = 27,
+  ProcessDebugFlags = 31
 } PROCESSINFOCLASS;
 
 /* Checked on 64 bit. */
@@ -857,7 +858,7 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION
 /* Checked on 64 bit. */
 typedef struct _FILE_INTERNAL_INFORMATION
 {
-  LARGE_INTEGER FileId;
+  LARGE_INTEGER IndexNumber;
 } FILE_INTERNAL_INFORMATION, *PFILE_INTERNAL_INFORMATION;
 
 /* Checked on 64 bit. */
@@ -1161,7 +1162,8 @@ typedef enum _THREADINFOCLASS
 {
   ThreadBasicInformation = 0,
   ThreadTimes = 1,
-  ThreadImpersonationToken = 5
+  ThreadImpersonationToken = 5,
+  ThreadQuerySetWin32StartAddress = 9
 } THREADINFOCLASS, *PTHREADINFOCLASS;
 
 /* Checked on 64 bit. */

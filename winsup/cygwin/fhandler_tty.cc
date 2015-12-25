@@ -12,6 +12,7 @@ details. */
 #include "winsup.h"
 #include <stdlib.h>
 #include <sys/param.h>
+#include <sys/acl.h>
 #include <cygwin/kd.h>
 #include "cygerrno.h"
 #include "security.h"
@@ -388,7 +389,7 @@ fhandler_pty_slave::open (int flags, mode_t)
     sd.malloc (sizeof (SECURITY_DESCRIPTOR));
     RtlCreateSecurityDescriptor (sd, SECURITY_DESCRIPTOR_REVISION);
     SECURITY_ATTRIBUTES sa = { sizeof (SECURITY_ATTRIBUTES), NULL, TRUE };
-    if (!create_object_sd_from_attribute (NULL, myself->uid, myself->gid,
+    if (!create_object_sd_from_attribute (myself->uid, myself->gid,
 					  S_IFCHR | S_IRUSR | S_IWUSR | S_IWGRP,
 					  sd))
       sa.lpSecurityDescriptor = (PSECURITY_DESCRIPTOR) sd;
@@ -1034,6 +1035,7 @@ fhandler_pty_slave::fstat (struct stat *st)
       if (input_available_event)
 	to_close = true;
     }
+  st->st_mode = S_IFCHR;
   if (!input_available_event
       || get_object_attribute (input_available_event, &st->st_uid, &st->st_gid,
 			       &st->st_mode))
@@ -1047,6 +1049,62 @@ fhandler_pty_slave::fstat (struct stat *st)
   if (to_close)
     CloseHandle (input_available_event);
   return 0;
+}
+
+int __reg3
+fhandler_pty_slave::facl (int cmd, int nentries, aclent_t *aclbufp)
+{
+  int res = -1;
+  bool to_close = false;
+  security_descriptor sd;
+  mode_t attr = S_IFCHR;
+
+  switch (cmd)
+    {
+      case SETACL:
+	if (!aclsort32 (nentries, 0, aclbufp))
+	  set_errno (ENOTSUP);
+	break;
+      case GETACL:
+	if (!aclbufp)
+	  {
+	    set_errno (EFAULT);
+	    break;
+	  }
+	/*FALLTHRU*/
+      case GETACLCNT:
+	if (!input_available_event)
+	  {
+	    char buf[MAX_PATH];
+	    shared_name (buf, INPUT_AVAILABLE_EVENT, get_minor ());
+	    input_available_event = OpenEvent (READ_CONTROL, TRUE, buf);
+	    if (input_available_event)
+	      to_close = true;
+	  }
+	if (!input_available_event
+	    || get_object_sd (input_available_event, sd))
+	  {
+	    res = get_posix_access (NULL, &attr, NULL, NULL, aclbufp, nentries);
+	    if (aclbufp && res == MIN_ACL_ENTRIES)
+	      {
+		aclbufp[0].a_perm = S_IROTH | S_IWOTH;
+		aclbufp[0].a_id = 18;
+		aclbufp[1].a_id = 544;
+	      }
+	    break;
+	  }
+	if (cmd == GETACL)
+	  res = get_posix_access (sd, &attr, NULL, NULL, aclbufp, nentries);
+	else
+	  res = get_posix_access (sd, &attr, NULL, NULL, NULL, 0);
+	break;
+      default:
+	set_errno (EINVAL);
+	break;
+    }
+  if (to_close)
+    CloseHandle (input_available_event);
+  return res;
 }
 
 /* Helper function for fchmod and fchown, which just opens all handles
@@ -1111,6 +1169,7 @@ fhandler_pty_slave::fchmod (mode_t mode)
   security_descriptor sd;
   uid_t uid;
   gid_t gid;
+  mode_t orig_mode = S_IFCHR;
 
   if (!input_available_event)
     {
@@ -1120,8 +1179,8 @@ fhandler_pty_slave::fchmod (mode_t mode)
     }
   sd.malloc (sizeof (SECURITY_DESCRIPTOR));
   RtlCreateSecurityDescriptor (sd, SECURITY_DESCRIPTOR_REVISION);
-  if (!get_object_attribute (input_available_event, &uid, &gid, NULL)
-      && !create_object_sd_from_attribute (NULL, uid, gid, S_IFCHR | mode, sd))
+  if (!get_object_attribute (input_available_event, &uid, &gid, &orig_mode)
+      && !create_object_sd_from_attribute (uid, gid, S_IFCHR | mode, sd))
     ret = fch_set_sd (sd, false);
 errout:
   if (to_close)
@@ -1134,10 +1193,10 @@ fhandler_pty_slave::fchown (uid_t uid, gid_t gid)
 {
   int ret = -1;
   bool to_close = false;
-  mode_t mode = 0;
+  security_descriptor sd;
   uid_t o_uid;
   gid_t o_gid;
-  security_descriptor sd;
+  mode_t mode = S_IFCHR;
 
   if (uid == ILLEGAL_UID && gid == ILLEGAL_GID)
     return 0;
@@ -1151,11 +1210,13 @@ fhandler_pty_slave::fchown (uid_t uid, gid_t gid)
   RtlCreateSecurityDescriptor (sd, SECURITY_DESCRIPTOR_REVISION);
   if (!get_object_attribute (input_available_event, &o_uid, &o_gid, &mode))
     {
-      if ((uid == ILLEGAL_UID || uid == o_uid)
-	  && (gid == ILLEGAL_GID || gid == o_gid))
+      if (uid == ILLEGAL_UID)
+	uid = o_uid;
+      if (gid == ILLEGAL_GID)
+	gid = o_gid;
+      if (uid == o_uid && gid == o_gid)
 	ret = 0;
-      else if (!create_object_sd_from_attribute (input_available_event,
-						 uid, gid, S_IFCHR | mode, sd))
+      else if (!create_object_sd_from_attribute (uid, gid, mode, sd))
 	ret = fch_set_sd (sd, true);
     }
 errout:
@@ -1695,7 +1756,7 @@ fhandler_pty_master::setup ()
   /* Create security attribute.  Default permissions are 0620. */
   sd.malloc (sizeof (SECURITY_DESCRIPTOR));
   RtlCreateSecurityDescriptor (sd, SECURITY_DESCRIPTOR_REVISION);
-  if (!create_object_sd_from_attribute (NULL, myself->uid, myself->gid,
+  if (!create_object_sd_from_attribute (myself->uid, myself->gid,
 					S_IFCHR | S_IRUSR | S_IWUSR | S_IWGRP,
 					sd))
     sa.lpSecurityDescriptor = (PSECURITY_DESCRIPTOR) sd;

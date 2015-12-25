@@ -1300,44 +1300,18 @@ path_conv::is_binary ()
 	 && (bin == SCS_32BIT_BINARY || bin == SCS_64BIT_BINARY);
 }
 
-/* Helper function to fill the fnoi datastructure for a file. */
+/* Helper function to fill the fai datastructure for a file. */
 NTSTATUS
-file_get_fnoi (HANDLE h, bool skip_network_open_inf,
-	       PFILE_NETWORK_OPEN_INFORMATION pfnoi)
+file_get_fai (HANDLE h, PFILE_ALL_INFORMATION pfai)
 {
   NTSTATUS status;
   IO_STATUS_BLOCK io;
 
   /* Some FSes (Netapps) don't implement FileNetworkOpenInformation. */
-  status = skip_network_open_inf ? STATUS_INVALID_PARAMETER
-	   : NtQueryInformationFile (h, &io, pfnoi, sizeof *pfnoi,
-				     FileNetworkOpenInformation);
-  if (status == STATUS_INVALID_PARAMETER)
-    {
-      /* Apart from accessing Netapps, this also occurs when accessing SMB
-	 share root dirs hosted on NT4. */
-      FILE_BASIC_INFORMATION fbi;
-      FILE_STANDARD_INFORMATION fsi;
-
-      status = NtQueryInformationFile (h, &io, &fbi, sizeof fbi,
-				       FileBasicInformation);
-      if (NT_SUCCESS (status))
-	{
-	  memcpy (pfnoi, &fbi, 4 * sizeof (LARGE_INTEGER));
-	  if (NT_SUCCESS (NtQueryInformationFile (h, &io, &fsi,
-					 sizeof fsi,
-					 FileStandardInformation)))
-	    {
-	      pfnoi->EndOfFile.QuadPart = fsi.EndOfFile.QuadPart;
-	      pfnoi->AllocationSize.QuadPart
-		= fsi.AllocationSize.QuadPart;
-	    }
-	  else
-	    pfnoi->EndOfFile.QuadPart
-	      = pfnoi->AllocationSize.QuadPart = 0;
-	  pfnoi->FileAttributes = fbi.FileAttributes;
-	}
-    }
+  status = NtQueryInformationFile (h, &io, pfai, sizeof *pfai,
+				   FileAllInformation);
+  if (status == STATUS_BUFFER_OVERFLOW)
+    status = STATUS_SUCCESS;
   return status;
 }
 
@@ -1668,7 +1642,7 @@ symlink_native (const char *oldpath, path_conv &win32_newpath)
 	    prefix strings.  We start counting behind the \\?\ for speed. */
       int num = cnt_bs (win32_oldpath.get_nt_native_path ()->Buffer + 4, c_old);
       if (num < 1		/* locale drive. */
-	  || (win32_oldpath.get_nt_native_path ()->Buffer[6] != L':'
+	  || (win32_oldpath.get_nt_native_path ()->Buffer[5] != L':'
 	      && num < 3))	/* UNC path. */
 	{
 	  /* 3a. No valid common path prefix: Create absolute symlink. */
@@ -1700,6 +1674,11 @@ symlink_native (const char *oldpath, path_conv &win32_newpath)
       SetLastError (ERROR_FILE_NOT_FOUND);
       return -1;
     }
+  /* Don't allow native symlinks to Cygwin special files.  However, the
+     caller shoud know because this case shouldn't be covered by the
+     default "nativestrict" behaviour, so we use a special return code. */
+  if (win32_oldpath.isspecial ())
+    return -2;
   /* Convert native paths to Win32 UNC paths. */
   final_newpath = win32_newpath.get_nt_native_path ();
   final_newpath->Buffer[1] = L'\\';
@@ -1843,8 +1822,9 @@ symlink_worker (const char *oldpath, const char *newpath, bool isdevice)
 	  res = symlink_native (oldpath, win32_newpath);
 	  if (!res)
 	    __leave;
-	  /* Strictly native?  Too bad. */
-	  if (wsym_type == WSYM_nativestrict)
+	  /* Strictly native?  Too bad, unless the target is a Cygwin
+	     special file. */
+	  if (res == -1 && wsym_type == WSYM_nativestrict)
 	    {
 	      __seterrno ();
 	      __leave;
@@ -2055,10 +2035,9 @@ symlink_worker (const char *oldpath, const char *newpath, bool isdevice)
 	  __seterrno_from_nt_status (status);
 	  __leave;
 	}
-      if (win32_newpath.has_acls ())
-	set_file_attribute (fh, win32_newpath, ILLEGAL_UID, ILLEGAL_GID,
-			    (io.Information == FILE_CREATED ? S_JUSTCREATED : 0)
-			    | S_IFLNK | STD_RBITS | STD_WBITS);
+      if (io.Information == FILE_CREATED && win32_newpath.has_acls ())
+	set_created_file_access (fh, win32_newpath,
+				 S_IFLNK | STD_RBITS | STD_WBITS);
       status = NtWriteFile (fh, NULL, NULL, NULL, &io, buf, cp - buf,
 			    NULL, NULL);
       if (NT_SUCCESS (status) && io.Information == (ULONG) (cp - buf))
@@ -2167,7 +2146,7 @@ symlink_info::check_shortcut (HANDLE h)
 	{
 	  char *tmpbuf = tp.c_get ();
 	  if (sys_wcstombs (tmpbuf, NT_MAX_PATH, (PWCHAR) (cp + 2))
-	      > SYMLINK_MAX + 1)
+	      > SYMLINK_MAX)
 	    return 0;
 	  res = posixify (tmpbuf);
 	}
@@ -2248,7 +2227,7 @@ symlink_info::check_sysfile (HANDLE h)
 	    srcbuf += 2;
 	  char *tmpbuf = tp.c_get ();
 	  if (sys_wcstombs (tmpbuf, NT_MAX_PATH, (PWCHAR) srcbuf)
-	      > SYMLINK_MAX + 1)
+	      > SYMLINK_MAX)
 	    debug_printf ("symlink string too long");
 	  else
 	    res = posixify (tmpbuf);
@@ -2289,7 +2268,13 @@ symlink_info::check_reparse_point (HANDLE h, bool remote)
     {
       debug_printf ("NtFsControlFile(FSCTL_GET_REPARSE_POINT) failed, %y",
 		    status);
-      set_error (EIO);
+      /* When accessing the root dir of some remote drives (observed with
+	 OS X shares), the FILE_ATTRIBUTE_REPARSE_POINT flag is set, but
+	 the followup call to NtFsControlFile(FSCTL_GET_REPARSE_POINT)
+	 returns with STATUS_NOT_A_REPARSE_POINT.  That's quite buggy, but
+	 we cope here with this scenario by not setting an error code. */
+      if (status != STATUS_NOT_A_REPARSE_POINT)
+	set_error (EIO);
       return 0;
     }
   if (rp->ReparseTag == IO_REPARSE_TAG_SYMLINK)
@@ -2362,7 +2347,7 @@ symlink_info::check_nfs_symlink (HANDLE h)
       PWCHAR spath = (PWCHAR)
 		     (pffei->EaName + pffei->EaNameLength + 1);
       res = sys_wcstombs (contents, SYMLINK_MAX + 1,
-			  spath, pffei->EaValueLength) - 1;
+			  spath, pffei->EaValueLength);
       pflags |= PATH_SYMLINK;
     }
   return res;
@@ -2822,9 +2807,9 @@ restart:
 	    }
 	  else
 	    {
-	      status = file_get_fnoi (h, fs.is_netapp (), conv_hdl.fnoi ());
+	      status = file_get_fai (h, conv_hdl.fai ());
 	      if (NT_SUCCESS (status))
-		fileattr = conv_hdl.fnoi ()->FileAttributes;
+		fileattr = conv_hdl.fai ()->BasicInformation.FileAttributes;
 	    }
 	}
       if (!NT_SUCCESS (status))
@@ -2862,7 +2847,7 @@ restart:
 	      OBJECT_ATTRIBUTES dattr;
 	      HANDLE dir;
 	      struct {
-		FILE_BOTH_DIR_INFORMATION fdi;
+		FILE_ID_BOTH_DIR_INFORMATION fdi;
 		WCHAR dummy_buf[NAME_MAX + 1];
 	      } fdi_buf;
 
@@ -2894,7 +2879,7 @@ restart:
 		{
 		  status = NtQueryDirectoryFile (dir, NULL, NULL, NULL, &io,
 						 &fdi_buf, sizeof fdi_buf,
-						 FileBothDirectoryInformation,
+						 FileIdBothDirectoryInformation,
 						 TRUE, &basename, TRUE);
 		  /* Take the opportunity to check file system while we're
 		     having the handle to the parent dir. */
@@ -2920,18 +2905,20 @@ restart:
 		    }
 		  else
 		    {
-		      PFILE_NETWORK_OPEN_INFORMATION pfnoi = conv_hdl.fnoi ();
+		      PFILE_ALL_INFORMATION pfai = conv_hdl.fai ();
 
 		      fileattr = fdi_buf.fdi.FileAttributes;
-		      memcpy (pfnoi, &fdi_buf.fdi.CreationTime, sizeof *pfnoi);
-		      /* Amazing, but true:  The FILE_NETWORK_OPEN_INFORMATION
-			 structure has the AllocationSize and EndOfFile members
-			 interchanged relative to the directory information
-			 classes. */
-		      pfnoi->AllocationSize.QuadPart
+		      memcpy (&pfai->BasicInformation.CreationTime,
+			      &fdi_buf.fdi.CreationTime,
+			      4 * sizeof (LARGE_INTEGER));
+		      pfai->BasicInformation.FileAttributes = fileattr;
+		      pfai->StandardInformation.AllocationSize.QuadPart
 			= fdi_buf.fdi.AllocationSize.QuadPart;
-		      pfnoi->EndOfFile.QuadPart
+		      pfai->StandardInformation.EndOfFile.QuadPart
 			= fdi_buf.fdi.EndOfFile.QuadPart;
+		      pfai->StandardInformation.NumberOfLinks = 1;
+		      pfai->InternalInformation.IndexNumber.QuadPart
+			= fdi_buf.fdi.FileId.QuadPart;
 		    }
 		}
 	      ext_tacked_on = !!*ext_here;
@@ -2965,7 +2952,8 @@ restart:
 	  if (res > 0)
 	    {
 	      /* A symlink is never a directory. */
-	      conv_hdl.fnoi ()->FileAttributes &= ~FILE_ATTRIBUTE_DIRECTORY;
+	      conv_hdl.fai ()->BasicInformation.FileAttributes
+		&= ~FILE_ATTRIBUTE_DIRECTORY;
 	      break;
 	    }
 	  else
@@ -3330,7 +3318,7 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
   char *buf = NULL;
   PWCHAR path = NULL;
   int error = 0;
-  bool relative = !!(what & CCP_RELATIVE);
+  int how = what & ~CCP_CONVTYPE_MASK;
   what &= CCP_CONVTYPE_MASK;
   int ret = -1;
 
@@ -3348,7 +3336,8 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	  {
 	    p.check ((const char *) from,
 		     PC_POSIX | PC_SYM_FOLLOW | PC_SYM_NOFOLLOW_REP
-		     | PC_NO_ACCESS_CHECK | PC_NOWARN | (relative ? PC_NOFULL : 0));
+		     | PC_NO_ACCESS_CHECK | PC_NOWARN
+		     | ((how & CCP_RELATIVE) ? PC_NOFULL : 0));
 	    if (p.error)
 	      {
 	        set_errno (p.error);
@@ -3381,7 +3370,7 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	       backslash ".\\" in the Win32 path.  That's a result of the
 	       conversion in normalize_posix_path.  This should not occur
 	       so the below code is just a band-aid. */
-	    if (relative && !strcmp ((const char *) from, ".")
+	    if ((how & CCP_RELATIVE) && !strcmp ((const char *) from, ".")
 		&& !strcmp (buf, ".\\"))
 	      {
 		lsiz = 2;
@@ -3392,14 +3381,15 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	case CCP_POSIX_TO_WIN_W:
 	  p.check ((const char *) from,
 		   PC_POSIX | PC_SYM_FOLLOW | PC_SYM_NOFOLLOW_REP
-		   | PC_NO_ACCESS_CHECK | PC_NOWARN | (relative ? PC_NOFULL : 0));
+		   | PC_NO_ACCESS_CHECK | PC_NOWARN
+		   | ((how & CCP_RELATIVE) ? PC_NOFULL : 0));
 	  if (p.error)
 	    {
 	      set_errno (p.error);
 	      __leave;
 	    }
 	  /* Relative Windows paths are always restricted to MAX_PATH chars. */
-	  if (relative && !isabspath (p.get_win32 ())
+	  if ((how & CCP_RELATIVE) && !isabspath (p.get_win32 ())
 	      && sys_mbstowcs (NULL, 0, p.get_win32 ()) > MAX_PATH)
 	    {
 	      /* Recreate as absolute path. */
@@ -3443,7 +3433,7 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	      lsiz += ro_u_globalroot.Length / sizeof (WCHAR);
 	    }
 	  /* TODO: Same ".\\" band-aid as in CCP_POSIX_TO_WIN_A case. */
-	  if (relative && !strcmp ((const char *) from, ".")
+	  if ((how & CCP_RELATIVE) && !strcmp ((const char *) from, ".")
 	      && !wcscmp (path, L".\\"))
 	    {
 	      lsiz = 2;
@@ -3454,7 +3444,7 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	case CCP_WIN_A_TO_POSIX:
 	  buf = tp.c_get ();
 	  error = mount_table->conv_to_posix_path ((const char *) from, buf,
-						   relative);
+						   how);
 	  if (error)
 	    {
 	      set_errno (p.error);
@@ -3465,7 +3455,7 @@ cygwin_conv_path (cygwin_conv_path_t what, const void *from, void *to,
 	case CCP_WIN_W_TO_POSIX:
 	  buf = tp.c_get ();
 	  error = mount_table->conv_to_posix_path ((const PWCHAR) from, buf,
-						   relative);
+						   how);
 	  if (error)
 	    {
 	      set_errno (error);

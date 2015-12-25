@@ -4,6 +4,97 @@
 
 <sect1 id="ov-new"><title>What's new and what changed in Cygwin</title>
 
+<sect2 id="ov-new2.4"><title>What's new and what changed in 2.4</title>
+
+<itemizedlist mark="bullet">
+
+<listitem><para>
+New, unified implementation of POSIX permission and ACL handling.  The
+new ACLs now store the POSIX ACL MASK/CLASS_OBJ permission mask, and
+they allow to inherit the S_ISGID bit.  ACL inheritance now really
+works as desired, in a limited, but theoretically equivalent fashion
+even for non-Cygwin processes.</para>
+
+<para>To accommodate standard Windows ACLs, the POSIX permissions of
+the owner and all other users in the ACL are computed using the Windows
+AuthZ API.  This may slow down the computation of POSIX permissions
+noticably in some circumstances, but is generally more correct.
+The new code also ignores SYSTEM and Administrators group permissions
+when computing the MASK/CLASS_OBJ permission mask on old ACLs, and it
+doesn't deny access to SYSTEM and Administrators group based on the
+value of MASK/CLASS_OBJ when creating the new ACLs.</para>
+
+<para>The new code now handles the S_ISGID bit on directories as on Linux:
+Setting S_ISGID on a directory causes new files and subdirs created
+within to inherit its group, rather than the primary group of the user
+who created the file.  This only works for files and directories
+created by Cygwin processes.
+</para></listitem>
+
+<listitem><para>
+cygpath has a new -U option, which creates cygdrive paths using the
+unambiguous /proc/cygdrive prefix.
+</para></listitem>
+
+<listitem><para>
+New API: rpmatch.
+</para></listitem>
+
+<listitem><para>
+Align setfacl(1) usage a bit closer to the usage on Linux.  Rename -d option
+to -x, --substitute to --set.  Add --no-mask and --mask options.  Allow to
+use the -b and -k option combined to allow reducing an ACL to only reflect
+standard POSIX permissions.
+</para></listitem>
+
+<listitem><para>
+Fix (numeric and monetary) decimal point and thousands separator in
+fa_IR and ps_AF locales to be aligned with Linux.
+</para></listitem>
+
+</itemizedlist>
+
+</sect2>
+
+<sect2 id="ov-new2.3"><title>What's new and what changed in 2.3</title>
+
+<itemizedlist mark="bullet">
+
+<listitem><para>
+strftime(3) supports %s (seconds since Epoch) now.
+</para></listitem>
+
+<listitem><para>
+posix_madvise(POSIX_MADV_WILLNEED) now utilizes OS functionality available
+starting with Windows 8/Server 2012.
+</para><para>
+posix_madvise(POSIX_MADV_DONTNEED) now utilizes OS functionality available
+starting with Windows 8.1/Server 2012R2.
+</para></listitem>
+
+<listitem><para>
+sysconf() now supports returning CPU cache information:
+  <screen>
+  _SC_LEVEL1_ICACHE_SIZE, _SC_LEVEL1_ICACHE_ASSOC, _SC_LEVEL1_ICACHE_LINESIZE,
+  _SC_LEVEL1_DCACHE_SIZE, _SC_LEVEL1_DCACHE_ASSOC, _SC_LEVEL1_DCACHE_LINESIZE,
+  _SC_LEVEL2_CACHE_SIZE, _SC_LEVEL2_CACHE_ASSOC, _SC_LEVEL2_CACHE_LINESIZE,
+  _SC_LEVEL3_CACHE_SIZE, _SC_LEVEL3_CACHE_ASSOC, _SC_LEVEL3_CACHE_LINESIZE,
+  _SC_LEVEL4_CACHE_SIZE, _SC_LEVEL4_CACHE_ASSOC, _SC_LEVEL4_CACHE_LINESIZE
+  </screen>
+</para></listitem>
+
+<listitem><para>
+New API: aligned_alloc, at_quick_exit, quick_exit.
+</para></listitem>
+
+<listitem><para>
+Add support for Parallels Desktop FS (prlfs).
+</para></listitem>
+
+</itemizedlist>
+
+</sect2>
+
 <sect2 id="ov-new2.2"><title>What's new and what changed in 2.2</title>
 
 <itemizedlist mark="bullet">

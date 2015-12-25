@@ -1,3 +1,543 @@
+
+2015-12-21  Freddie Chopin  <freddie.chopin@gmail.com>
+
+	* libc/stdlib/__atexit.c (__register_exitproc): Fix for
+	_ATEXIT_DYNAMIC_ALLOC.
+
+2015-12-21  Freddie Chopin  <freddie.chopin@gmail.com>
+
+	* libc/stdlib/on_exit_args.{c,h}: New files.
+	* libc/stdlib/Makefile.am: Add new source file.
+	* libc/stdlib/Makefile.in: Regenerate.
+	* libc/stdlib/__atexit.c (__register_exitproc): Initialize
+	_on_exit_args_ptr field of _GLOBAL_ATEXIT on first run.
+	* libc/stdlib/on_exit.c: Force linking of static instance of
+	_on_exit_args.
+	* libc/stdlib/cxa_atexit.c: Likewise.
+
+2015-12-17  Anton Kolesov  <Anton.Kolesov@synopsys.com>
+
+	* libc/machine/arc/asm.h: Define new GCC definition for old compiler.
+	* libc/machine/arc/memcmp-bs-norm.S: Use new GCC defines to detect
+	processor features.
+	* libc/machine/arc/memcmp.S: Likewise.
+	* libc/machine/arc/memcpy-archs.S: Likewise.
+	* libc/machine/arc/memcpy-bs.S: Likewise.
+	* libc/machine/arc/memcpy.S: Likewise.	* libc/machine/arc/memset-archs.S: Likewise.
+	* libc/machine/arc/memset-archs.S: Likewise.
+	* libc/machine/arc/memset-bs.S: Likewise.
+	* libc/machine/arc/memset.S: Likewise.
+	* libc/machine/arc/setjmp.S: Likewise.
+	* libc/machine/arc/strchr-bs-norm.S: Likewise.
+	* libc/machine/arc/strchr-bs.S: Likewise.
+	* libc/machine/arc/strchr.S: Likewise.
+	* libc/machine/arc/strcmp-archs.S: Likewise.
+	* libc/machine/arc/strcmp.S: Likewise.
+	* libc/machine/arc/strcpy-bs-arc600.S: Likewise.
+	* libc/machine/arc/strcpy-bs.S: Likewise.
+	* libc/machine/arc/strcpy.S: Likewise.
+	* libc/machine/arc/strlen-bs-norm.S: Likewise.
+	* libc/machine/arc/strlen-bs.S: Likewise.
+	* libc/machine/arc/strlen.S: Likewise.
+	* libc/machine/arc/strncpy-bs.S: Likewise.
+	* libc/machine/arc/strncpy.S: Likewise.
+
+2015-12-17  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/include/sys/types.h: Remove including <sys/select.h>.
+
+2015-12-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/reent.h (_REENT_INIT_PTR_ZEROED): New.
+	(_REENT_INIT_PTR): Define only once and use _REENT_INIT_PTR_ZEROED().
+
+2015-12-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/_sigset.h: New.
+	* libc/include/sys/select.h: Do not include <sys/types.h> and
+	<sys/time.h> to avoid cyclic header file dependencies.  Include
+	specialized header files instead.
+	(sigset_t): Conditionally define.
+	* libc/include/sys/signal.h (sigset_t): Likewise.
+	* libc/include/sys/time.h: Include <sys/select.h> if
+	__BSD_VISIBLE.
+	* libc/include/sys/types.h: Likewise.
+
+2015-12-12  Freddie Chopin  <freddie.chopin@gmail.com>
+
+	* libc/stdlib/__atexit.c (__register_exitproc): Always release
+	lock before return.
+
+2015-12-09  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* libm/machine/arm/s_ceil.c: Also check that 64bit FP instructions are
+	available in the guard.
+	* libm/machine/arm/s_floor.c: Likewise.
+	* libm/machine/arm/s_nearbyint.c: Likewise.
+	* libm/machine/arm/s_rint.c: Likewise.
+	* libm/machine/arm/s_round.c: Likewise.
+	* libm/machine/arm/s_trunc.c: Likewise.
+
+2015-12-08  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdio/fclose.c (_fclose_r): Make _flockfile/_funlockfile calls
+	dependent on __SNLK flag.
+	* libc/stdio/findfp.c (__fp_lock): Ditto.
+	(__fp_unlock): Ditto.
+	* libc/stdio/freopen.c (_freopen_r): Ditto.
+	* libc/stdio64/freopen64.c (_freopen64_r): Ditto.
+
+2015-12-08  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdio/freopen.c (_freopen_r): Only reset __SWID bit per SUSv4.
+	* libc/stdio64/freopen64.c (_freopen64_r): Add missing resetting of
+	flag values and _mbstate.
+
+2015-12-07  Nick Withers  <nick.withers@anu.edu.au>
+
+	* libc/sys/arm/sys/param.h (NBBY): Define if not already defined.
+	* libc/sys/rtems/include/sys/param.h (NBBY): Define.
+
+2015-12-07  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/include/sys/types.h: Move definitions of NBBY and howmany to
+	sys/param.h.  Move definitions of select(2) macros to sys/select.h.
+	* libc/include/sys/param.h: See above.
+	* libc/include/sys/select.h: Move Cygwin's sys/select.h here.
+
+2015-11-26  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/strtodg.c: Add ifdef to check _HAVE_LONG_DOUBLE and
+	_LDBL_EQ_DBL.
+
+2015-11-24  Steve Ellcey  <sellcey@imgtec.com>
+
+	* libc/stdlib/strtorx.c: Fix ifdef to check _LDBL_EQ_DBL.
+
+2015-11-23  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/strlen-stub.c: Adjust strlen-armv7.S selection logic.
+	* libc/machine/arm/strlen.S: Likewise.
+
+2015-11-23  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/strlen-stub.c: Move T2 -O2 implementation to...
+	* libc/machine/arm/strlen-thumb2-Os.S: New file.
+	* libc/machine/arm/strlen.S: Include strlen-thumb2-Os.S.
+
+2015-11-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/strtodg.c: Define USE_LOCALE.
+	(_strtodg_r): Handle multibyte decimal point.
+
+2015-11-20  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/Makefile.am (GENERAL_SOURCES): Add strtodg.c and
+	strtorx.c.
+	* libc/stdlib/Makefile.in: Regenerate.
+	* libc/stdlib/strtodg.c: New file implementing generic string to long
+	double conversion.
+	* libc/stdlib/strtorx.c: New file, implementing IEEE format string to
+	long double conversion.
+	* libc/stdlib/mprec.h (_strtodg_r): Declare.
+	(_strtorx_r): Declare.
+	* libc/stdlib/gdtoa.h (__UShort): Define.
+	* libc/stdlib/strtold.c (__flt_rounds): Define for i386 and x86_64
+	target.
+	(FLT_ROUNDS): Define, as 0 on platforms missing a __flt_rounds
+	function.
+	(_strtold_r): Converted from strtold.  Call _strtorx_r on targets
+	supporting distinct long doubles.
+	(strtold): Just call _strtold_r.
+	* libc/include/stdlib.h (_strtold_r): Declare.
+	* libc/stdlib/ldtoa.c (_strtold): Comment out.  Explain why.
+	* libc/stdio/vfscanf.c (__SVFSCANF_R): Call _strtold_r instead of
+	_strtold.
+	* libc/machine/powerpc/vfscanf.c (__svfscanf_r): Ditto.
+
+2015-11-20  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/strtod.c (match): Move from here...
+	* libc/stdlib/gdtoa-hexnan.c (match): ...to here.
+	* libc/stdlib/mprec.h (match): Declare and add __match define.
+
+2015-11-20  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/wcstold.c (_strtold): Drop unused declaration.
+
+2015-11-19  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* libc/stdlib/stdlib.tex: Fix typo in rpmatch reference.
+
+2015-11-19  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/ldtoa.c: Convert to GNU style so as not to get crazy
+	reading the code.
+
+2015-11-19  Corinna Vinschen  <corinna@vinschen.de>
+
+	* libc/stdlib/rpmatch.c: Include sys/types.h to make GCC happy.
+
+2015-11-12  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* libc/stdio/sprintf.c: Simplify documentation markup.
+	* libc/stdio/swprintf.c: Ditto.
+
+2015-11-12  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* libc/stdio/sscanf.c: Improve documentation markup.
+	* libc/stdio/swscanf.c: Ditto.
+
+2015-11-17  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* libc/include/stdlib.h (rpmatch): Declare.
+	* libc/stdlib/Makefile.am (ELIX_4_SOURCES): Add rpmatch.c.
+	(CHEWOUT_FILES): Add rpmatch.def.
+	* libc/stdlib/Makefile.in: Regenerate.
+	* libc/stdlib/rpmatch.c: New file.
+	* libc/stdlib/stdlib.tex: Add references to rpmatch.
+
+2015-11-13  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/strlen-stub.c: Move T1 -O2 implementation to...
+	* libc/machine/arm/strlen-thumb1-Os.S: New file.
+	* libc/machine/arm/strlen.S: Include strlen-thumb1-Os.S.
+
+2015-11-13  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/Makefile.am: Adding strlen.S.
+	* libc/machine/arm/Makefile.in: Regenerate.
+	* libc/machine/arm/strlen.S: New.
+	* libc/machine/arm/strlen-stub.c: Rewrite #if condition.
+	* libc/machine/arm/strlen-armv7.S: Remove surrounding #if.
+
+2015-11-13  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/Makefile.am: Rename strlen.c to strlen-stub.c
+	* libc/machine/arm/Makefile.in: Regenerate.
+	* libc/machine/arm/strlen.c: Rename to...
+	* libc/machine/arm/strlen-stub.c: ... this.
+
+2015-11-13  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/Makefile.am: Drop STRLEN_SRC and STRLEN_OBJ.
+	Adding strlen.c.
+	* libc/machine/arm/configure.in (HAVE_THUMB1, OPT_SIZE): Remove.
+	* libc/machine/arm/strlen.c: Include ../../string/strlen.c.
+	* libc/machine/arm/configure: Regenerate.
+	* libc/machine/arm/Makefile.in: Regenerate.
+
+2015-11-13  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/strlen.c: Refactor nested #if.
+
+2015-11-12  Anton Kolesov  <Anton.Kolesov@synopsys.com>
+
+	* configure.host: Add ARC support.
+	* libc/include/machine/setjmp.h: Likewise.
+	* libc/machine/configure: Likewise.
+	* libc/machine/configure.in: Likewise.
+	* libc/machine/arc/Makefile.am: Likewise.
+	* libc/machine/arc/Makefile.in: Likewise.
+	* libc/machine/arc/aclocal.m4: Likewise.
+	* libc/machine/arc/asm.h: Likewise.
+	* libc/machine/arc/configure: Likewise.
+	* libc/machine/arc/configure.in: Likewise.
+	* libc/machine/arc/memcmp-bs-norm.S: Likewise.
+	* libc/machine/arc/memcmp-stub.c: Likewise.
+	* libc/machine/arc/memcmp.S: Likewise.
+	* libc/machine/arc/memcpy-archs.S: Likewise.
+	* libc/machine/arc/memcpy-bs.S: Likewise.
+	* libc/machine/arc/memcpy-stub.c: Likewise.
+	* libc/machine/arc/memcpy.S: Likewise.
+	* libc/machine/arc/memset-archs.S: Likewise.
+	* libc/machine/arc/memset-bs.S: Likewise.
+	* libc/machine/arc/memset-stub.c: Likewise.
+	* libc/machine/arc/memset.S: Likewise.
+	* libc/machine/arc/setjmp.S: Likewise.
+	* libc/machine/arc/strchr-bs-norm.S: Likewise.
+	* libc/machine/arc/strchr-bs.S: Likewise.
+	* libc/machine/arc/strchr-stub.c: Likewise.
+	* libc/machine/arc/strchr.S: Likewise.
+	* libc/machine/arc/strcmp-archs.S: Likewise.
+	* libc/machine/arc/strcmp-stub.c: Likewise.
+	* libc/machine/arc/strcmp.S: Likewise.
+	* libc/machine/arc/strcpy-bs-arc600.S: Likewise.
+	* libc/machine/arc/strcpy-bs.S: Likewise.
+	* libc/machine/arc/strcpy-stub.c: Likewise.
+	* libc/machine/arc/strcpy.S: Likewise.
+	* libc/machine/arc/strlen-bs-norm.S: Likewise.
+	* libc/machine/arc/strlen-bs.S: Likewise.
+	* libc/machine/arc/strlen-stub.c: Likewise.
+	* libc/machine/arc/strlen.S: Likewise.
+	* libc/machine/arc/strncpy-bs.S: Likewise.
+	* libc/machine/arc/strncpy-stub.c: Likewise.
+	* libc/machine/arc/strncpy.S: Likewise.
+
+2015-11-12  Anton Kolesov  <Anton.Kolesov@synopsys.com>
+
+	* configure.host: Remove ARC system.
+	* libc/sys/configure: Likewise.
+	* libc/sys/configure.in: Likewise.
+	* libc/sys/arc/Makefile.am: Likewise.
+	* libc/sys/arc/Makefile.in: Likewise.
+	* libc/sys/arc/aclocal.m4: Likewise.
+	* libc/sys/arc/configure: Likewise.
+	* libc/sys/arc/configure.in: Likewise.
+	* libc/sys/arc/crt0.S: Likewise.
+	* libc/sys/arc/dummy.S: Likewise.
+	* libc/sys/arc/isatty.c: Likewise.
+	* libc/sys/arc/mem-layout.c: Likewise.
+	* libc/sys/arc/sbrk.c: Likewise.
+	* libc/sys/arc/sys/syscall.h: Likewise.
+	* libc/sys/arc/syscalls.c: Likewise.
+
+2015-11-12  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* testsuite/lib/flags.exp (libgloss_link_flags): Drop multilibtop
+	from target_build_path.
+
+2015-11-06  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* doc/makedoc.c (iscommand): Only allow commands to have trailing
+	spaces, not space separated words.
+
+2015-11-06  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* libm/mathfp/s_acos.c: Fix QUICKREF.
+	* libm/mathfp/e_acosh.c: Ditto.
+	* libm/math/w_asin.c: Ditto.
+	* libm/mathfp/e_acosh.c: Ditto.
+	* libm/mathfp/s_acos.c: Ditto.
+
+2015-11-06  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* doc/doc.str: Fix INTERNAL_DEFINITION, INTERNAL_FUNCTION and
+	INTERNAL.
+
+2015-11-12  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* newlib/libc/machine/aarch64/memcpy.S (memcpy): Further tuning for
+	performance.
+
+2015-11-12  Joseph Myers  <joseph@codesourcery.com>
+
+	* libc/machine/arm/strcmp-arm-tiny.S: Use .cfi_sections
+	.debug_frame.
+	* libc/machine/arm/strcmp-armv4.S: Likewise.
+	* libc/machine/arm/strcmp-armv4t.S: Likewise.
+	* libc/machine/arm/strcmp-armv6.S: Likewise.
+	* libc/machine/arm/strcmp-armv6m.S: Likewise.
+	* libc/machine/arm/strcmp-armv7.S: Likewise.
+	* libc/machine/arm/strcmp-armv7m.S: Likewise.
+
+2015-11-06  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/Makefile.am: Drop MEMCHR_SRC and MEMCHR_OBJ.
+	* libc/machine/arm/Makefile.in: Regenerate.
+	* libc/machine/arm/memchr-stub.c: New.
+	* libc/machine/arm/memchr.S: Adjust comments.  Include memchr.c and
+	acle-compat.h.  Make .arch directive architecture dependent.
+	* libc/machine/arm/configure.in (HAVE_ARMV7): Remove.
+	* libc/machine/arm/configure: Regenerate.
+
+2015-11-06  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/Makefile.am: Drop MEMCPY_SRC and MEMCPY_OBJ.
+	* libc/machine/arm/Makefile.in: Regenerate.
+	* libc/machine/arm/configure.in: Remove HAVE_ARMV8A, HAVE_ARMV7A and
+	HAVE_ARM7M.
+	* libc/machine/arm/configure: Regenerate.
+	* libc/machine/arm/memcpy-stub.c: New.
+	* libc/machine/arm/memcpy.c: Adjust copyright year.  Adjust comments.
+	Include acle-compat.h.
+
+2015-11-06  Olivier Martin  <olivier@labapart.com>
+
+	* libc/include/stdlib.h (mktemp): Change attribute to deprecated.
+	(_mktemp_r): Ditto.
+
+2015-11-03  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* libc/machine/arm/configure.in: Check for __ARM_ARCH_8A__.
+	* libc/machine/arm/memcpy.S: Handle __ARM_ARCH_8A__.
+	* libc/machine/arm/Makefile.am: Consider HAVE_ARMV8A in memcpy
+	selection.
+	* libc/machine/arm/Makefile.in: Regenerate.
+	* libc/machine/arm/configure: Regenerate.
+
+2015-11-02  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* HOWTO: Update.
+	* Makefile.shared: Move documentation rules to here...
+	* libc/argz/Makefile.am: ... from here ...
+	* libc/ctype/Makefile.am: ... and here.
+	* libc/errno/Makefile.am: Ditto.
+	* libc/iconv/Makefile.am: Ditto.
+	* libc/iconv/ccs/Makefile.am : Ditto.
+	* libc/iconv/ces/Makefile.am: Ditto.
+	* libc/iconv/lib/Makefile.am: Ditto.
+	* libc/locale/Makefile.am: Ditto.
+	* libc/misc/Makefile.am: Ditto.
+	* libc/posix/Makefile.am: Ditto.
+	* libc/reent/Makefile.am: Ditto.
+	* libc/search/Makefile.am: Ditto.
+	* libc/stdio/Makefile.am: Ditto.
+	* libc/stdio64/Makefile.am: Ditto.
+	* libc/stdlib/Makefile.am : Ditto.
+	* libc/string/Makefile.am: Ditto.
+	* libc/syscalls/Makefile.am: Ditto.
+	* libc/time/Makefile.am : Ditto.
+	* libc/unix/Makefile.am: Ditto.
+	* libc/xdr/Makefile.am: Ditto.
+	* libm/common/Makefile.am: Ditto.
+	* libm/complex/Makefile.am: Ditto.
+	* libm/math/Makefile.am: Ditto.
+	* libm/mathfp/Makefile.am: Ditto.
+
+2015-11-02  Jon Turney  <jon.turney@dronecode.org.uk>
+
+        * libc/time/wcsftime.c: Consistently use an em-dash in FUNCTION
+summary.
+        * libm/common/isgreater.c: Ditto.
+        * libm/common/s_fdim.c: Ditto.
+        * libm/common/s_fma.c: Ditto.
+        * libm/common/s_fmax.c: Ditto.
+        * libm/common/s_fmin.c: Ditto.
+        * libm/common/s_infinity.c: Ditto.
+        * libm/common/s_isnan.c: Ditto.
+        * libm/common/s_log2.c: Ditto.
+        * libm/common/s_logb.c: Ditto.
+        * libm/common/s_lrint.c: Ditto.
+        * libm/common/s_lround.c: Ditto.
+        * libm/common/s_nearbyint.c: Ditto.
+        * libm/common/s_remquo.c: Ditto.
+        * libm/common/s_rint.c: Ditto.
+        * libm/common/s_round.c: Ditto.
+        * libm/common/s_scalbn.c: Ditto.
+        * libm/common/s_signbit.c: Ditto.
+        * libm/common/s_trunc.c: Ditto.
+        * libm/math/w_exp2.c: Ditto.
+        * libm/math/w_gamma.c: Ditto.
+
+2015-11-02  Jon Turney  <jon.turney@dronecode.org.uk>
+
+        * libc/stdio/fseek.c: Add missing semicolons to prototypes in
+        SYNOPSIS.
+        * libc/stdio/fwide.c: Ditto.
+        * libc/stdio64/fseeko64.c: Ditto.
+        * libc/string/strtok.c: Ditto.
+        * libc/string/wcstok.c: Ditto.
+        * libm/math/w_cosh.c: Ditto.
+        * libm/math/w_fmod.c:  Ditto.
+        * libm/mathfp/s_cosh.c: Ditto.
+        * libm/mathfp/s_fmod.c: Ditto.
+
+2015-11-02  Steve Ellcey  <sellcey@imgtec.com>
+
+	* libc/machine/mips/memcpy.S (memcpy): Add word copies for small
+	aligned data.
+
+2015-10-30  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/pthread.h: Include <sched.h> instead of <sys/sched.h>.
+
+2015-10-26  Brian Inglis  <Brian.Inglis@SystematicSw.ab.ca>
+
+	* libc/time/strftime.c (__strftime): add support for %s (seconds from
+	Unix epoch).  Fix whitespaces.
+
+2015-10-19  Nick Clifton  <nickc@redhat.com>
+
+	* libc/include/sys/_intsup.h: Add support for 16-bit and 20-bit
+	pointers.
+
+2015-10-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/stdlib/Makefile.am (GENERAL_SOURCES): Add alloc_aligned.c.c.
+	* libc/stdlib/Makefile.in: Regenerate.
+	* libc/stdlib/aligned_alloc.c: New.
+
+2015-10-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/stdlib.h (alloc_aligned): Declare.
+
+2015-10-14  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/stdlib.h (at_quick_exit): Declare.
+	(quick_exit): Likewise.
+	* libc/stdlib/Makefile.am (GENERAL_SOURCES): Add
+	quick_exit.c.
+	* libc/stdlib/Makefile.in: Regenerate.
+	* libc/stdlib/quick_exit.c: New.
+
+2015-10-13  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/threads.h: New.
+	* libc/sys/rtems/include/machine/_threads.h: Likewise.
+
+2015-10-13  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/cdefs.h: Synchronize with latest FreeBSD
+	version.
+
+2015-10-13  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libc/include/sys/cdefs.h: Add style changes of latest FreeBSD
+	version.
+
+2015-10-08  Nick Clifton  <nickc@redhat.com>
+
+	* libc/include/machine/setjmp.h (_JBLEN): Define for IA64.
+
+2015-09-22  James Bowman  <james.bowman@ftdichip.com>
+
+	* configure.host (ft32): minimise newlib code size
+
+2015-09-04  James Bowman  <james.bowman@ftdichip.com>
+
+	* configure.host: Add ft32 support.
+	* libc/include/machine/ieeefp.h: Ditto.
+	* libc/include/machine/setjmp.h: Ditto.
+	* libc/machine/configure.in: Ditto.
+	* libc/machine/configure: Ditto.
+	* libc/machine/ft32/Makefile.am: New file.
+	* libc/machine/ft32/Makefile.in: Ditto.
+	* libc/machine/ft32/aclocal.m4: Ditto.
+	* libc/machine/ft32/configure.in: Ditto.
+	* libc/machine/ft32/configure: Ditto.
+	* libc/machine/ft32/memcpy.S: Ditto.
+	* libc/machine/ft32/memset.S: Ditto.
+	* libc/machine/ft32/setjmp.S: Ditto.
+	* libc/machine/ft32/stpcmp.S: Ditto.
+	* libc/machine/ft32/strcmp.S: Ditto.
+	* libc/machine/ft32/strcpy.S: Ditto.
+	* libc/machine/ft32/strlen.S: Ditto.
+
+2015-09-03  Hans-Peter Nilsson  <hp@axis.com>
+
+	* libc/machine/cris/sys/signal.h (kill): Declare.
+
+2015-08-29  Corinna Vinschen  <corinna@vinschen.de>
+
+	* include/sys/unistd.h (_SC_LEVEL*): Add cache-related variables as
+	on Linux.
+
+2015-08-27  Markus Eisenmann  <meisenmann.lba@fh-salzburg.ac.at>
+
+	* libc/machine/arm/strlen-armv7.S: Fix prepocessor check to avoid
+	double definition of strlen.
+
+2015-08-27  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* libc/include/sys/_intsup.h: Defined new __INTxx, __FASTxx and
+	__LEASTxx macro's to hold information regarding the respective types
+	print and scan formats.
+	* libc/include/inttypes.h: Defined LEAST and FAST specific PRI and SCN
+	macro's as these are not always the same as the INT variants. Used the
+	new __INTxx, __FASTxx and __LEASTxx macro's in their corresponding PRI
+	and SCN macros.
+
 2015-08-07  Stefan Wallentowitz  <stefan.wallentowitz@tum.de>
 
 	* libc/sys/or1k/mlock.c: Fix exception enable saving

@@ -966,43 +966,27 @@ pthread::static_cancel_self ()
 int
 pthread::setcancelstate (int state, int *oldstate)
 {
-  int result = 0;
-
-  mutex.lock ();
-
   if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE)
-    result = EINVAL;
-  else
-    {
-      if (oldstate)
-	*oldstate = cancelstate;
-      cancelstate = state;
-    }
+    return EINVAL;
 
-  mutex.unlock ();
+  if (oldstate)
+    *oldstate = cancelstate;
+  cancelstate = state;
 
-  return result;
+  return 0;
 }
 
 int
 pthread::setcanceltype (int type, int *oldtype)
 {
-  int result = 0;
-
-  mutex.lock ();
-
   if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS)
-    result = EINVAL;
-  else
-    {
-      if (oldtype)
-	*oldtype = canceltype;
-      canceltype = type;
-    }
+    return EINVAL;
 
-  mutex.unlock ();
+  if (oldtype)
+    *oldtype = canceltype;
+  canceltype = type;
 
-  return result;
+  return 0;
 }
 
 void
@@ -2485,8 +2469,7 @@ pthread::resume (pthread_t *thread)
 extern "C" int
 pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 {
-  const size_t sizeof_tbi = sizeof (THREAD_BASIC_INFORMATION);
-  PTHREAD_BASIC_INFORMATION tbi;
+  THREAD_BASIC_INFORMATION tbi;
   NTSTATUS status;
 
   if (!pthread::is_good_object (&thread))
@@ -2506,13 +2489,12 @@ pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
   (*attr)->schedparam = thread->attr.schedparam;
   (*attr)->guardsize = thread->attr.guardsize;
 
-  tbi = (PTHREAD_BASIC_INFORMATION) malloc (sizeof_tbi);
   status = NtQueryInformationThread (thread->win32_obj_id,
 				     ThreadBasicInformation,
-				     tbi, sizeof_tbi, NULL);
+				     &tbi, sizeof (tbi), NULL);
   if (NT_SUCCESS (status))
     {
-      PTEB teb = (PTEB) tbi->TebBaseAddress;
+      PTEB teb = (PTEB) tbi.TebBaseAddress;
       /* stackaddr holds the uppermost stack address.  See the comments
 	 in pthread_attr_setstack and pthread_attr_setstackaddr for a
 	 description. */
@@ -3058,7 +3040,11 @@ pthread_kill (pthread_t thread, int sig)
   if (!thread->valid)
     rval = ESRCH;
   else if (sig)
-    rval = sig_send (NULL, si, thread->cygtls);
+    {
+      rval = sig_send (NULL, si, thread->cygtls);
+      if (rval == -1)
+	rval = get_errno ();
+    }
   else
     switch (WaitForSingleObject (thread->win32_obj_id, 0))
       {

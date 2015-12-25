@@ -411,15 +411,16 @@ child_info_fork::alloc_stack ()
 {
   /* Make sure not to try a hard allocation if we have been forked off from
      the main thread of a Cygwin process which has been started from a 64 bit
-     parent.  In that case the _tlsbase of the forked child is not the same
-     as the _tlsbase of the parent (== stackbottom), but only because the
+     parent.  In that case the StackBase of the forked child is not the same
+     as the StackBase of the parent (== this.stackbase), but only because the
      stack of the parent has been slightly rearranged.  See comment in
      wow64_revert_to_original_stack for details. We check here if the
      parent stack fits into the child stack. */
-  if (_tlsbase != stackbottom
+  PTEB teb = NtCurrentTeb ();
+  if (teb->Tib.StackBase != stackbase
       && (!wincap.is_wow64 ()
-	  || stacktop < NtCurrentTeb ()->DeallocationStack
-	  || stackbottom > _tlsbase))
+	  || stacklimit < teb->DeallocationStack
+	  || stackbase > teb->Tib.StackBase))
     {
       void *stack_ptr;
       size_t stacksize;
@@ -429,21 +430,21 @@ child_info_fork::alloc_stack ()
       if (guardsize == (size_t) -1)
 	return;
       /* Reserve entire stack. */
-      stacksize = (PBYTE) stackbottom - (PBYTE) stackaddr;
+      stacksize = (PBYTE) stackbase - (PBYTE) stackaddr;
       if (!VirtualAlloc (stackaddr, stacksize, MEM_RESERVE, PAGE_NOACCESS))
 	{
-	  PTEB teb = NtCurrentTeb ();
 	  api_fatal ("fork: can't reserve memory for parent stack "
 		     "%p - %p, (child has %p - %p), %E",
-		     stackaddr, stackbottom, teb->DeallocationStack, _tlsbase);
+		     stackaddr, stackbase, teb->DeallocationStack,
+		     teb->Tib.StackBase);
 	}
       /* Commit the area commited in parent. */
-      stacksize = (PBYTE) stackbottom - (PBYTE) stacktop;
-      stack_ptr = VirtualAlloc (stacktop, stacksize, MEM_COMMIT,
+      stacksize = (PBYTE) stackbase - (PBYTE) stacklimit;
+      stack_ptr = VirtualAlloc (stacklimit, stacksize, MEM_COMMIT,
 				PAGE_READWRITE);
       if (!stack_ptr)
 	api_fatal ("can't commit memory for stack %p(%ly), %E",
-		   stacktop, stacksize);
+		   stacklimit, stacksize);
       /* Set up guardpages. */
       ULONG real_guardsize = guardsize
 			     ? roundup2 (guardsize, wincap.page_size ())
@@ -471,25 +472,25 @@ child_info_fork::alloc_stack ()
       /* Fork has been called from main thread.  Simply commit the region
 	 of the stack commited in the parent but not yet commited in the
 	 child and create new guardpages. */
-      if (_tlstop > stacktop)
+      if (NtCurrentTeb ()->Tib.StackLimit > stacklimit)
 	{
-	  SIZE_T commitsize = (PBYTE) _tlstop - (PBYTE) stacktop;
-	  if (!VirtualAlloc (stacktop, commitsize, MEM_COMMIT, PAGE_READWRITE))
+	  SIZE_T commitsize = (PBYTE) NtCurrentTeb ()->Tib.StackLimit
+			      - (PBYTE) stacklimit;
+	  if (!VirtualAlloc (stacklimit, commitsize, MEM_COMMIT, PAGE_READWRITE))
 	    api_fatal ("can't commit child memory for stack %p(%ly), %E",
-		       stacktop, commitsize);
-	  PVOID guardpage = (PBYTE) stacktop - wincap.def_guard_page_size ();
+		       stacklimit, commitsize);
+	  PVOID guardpage = (PBYTE) stacklimit - wincap.def_guard_page_size ();
 	  if (!VirtualAlloc (guardpage, wincap.def_guard_page_size (),
 			     MEM_COMMIT, PAGE_READWRITE | PAGE_GUARD))
 	    api_fatal ("fork: couldn't allocate new stack guard page %p, %E",
 		       guardpage);
-	  _tlstop = stacktop;
+	  NtCurrentTeb ()->Tib.StackLimit = stacklimit;
 	}
-      stackaddr = 0;
       /* This only affects forked children of a process started from a native
 	 64 bit process, but it doesn't hurt to do it unconditionally.  Fix
 	 StackBase in the child to be the same as in the parent, so that the
 	 computation of _my_tls is correct. */
-      _tlsbase = (PVOID) stackbottom;
+      teb->Tib.StackBase = (PVOID) stackbase;
     }
 }
 
@@ -909,18 +910,18 @@ dll_crt0_1 (void *)
   cygbench ("pre-forkee");
   if (in_forkee)
     {
-      /* If we've played with the stack, stacksize != 0.  That means that
-	 fork() was invoked from other than the main thread.  Make sure that
-	 frame pointer is referencing the new stack so that the OS knows what
-	 to do when it needs to increase the size of the stack.
+      /* Make sure to restore the TEB's stack info.  If guardsize is -1 the
+	 stack has been provided by the application and must not be deallocated
+	 automagically when the thread exits.
 
 	 NOTE: Don't do anything that involves the stack until you've completed
 	 this step. */
-      if (fork_info->stackaddr)
-	{
-	  _tlsbase = (PVOID) fork_info->stackbottom;
-	  _tlstop = (PVOID) fork_info->stacktop;
-	}
+      PTEB teb = NtCurrentTeb ();
+      teb->Tib.StackBase = (PVOID) fork_info->stackbase;
+      teb->Tib.StackLimit = (PVOID) fork_info->stacklimit;
+      teb->DeallocationStack = (fork_info->guardsize == (size_t) -1)
+			       ? NULL
+			       : (PVOID) fork_info->stackaddr;
 
       /* Not resetting _my_tls.incyg here because presumably fork will overwrite
 	 it with the value of the forker and all will be good.   */
@@ -952,7 +953,7 @@ dll_crt0_1 (void *)
   if (!__argc)
     {
       PWCHAR wline = GetCommandLineW ();
-      size_t size = sys_wcstombs (NULL, 0, wline);
+      size_t size = sys_wcstombs (NULL, 0, wline) + 1;
       char *line = (char *) alloca (size);
       sys_wcstombs (line, size, wline);
 
@@ -1061,7 +1062,44 @@ __cygwin_exit_return:			\n\
 extern "C" void __stdcall
 _dll_crt0 ()
 {
-#ifndef __x86_64__
+#ifdef __x86_64__
+  /* Starting with Windows 10 rel 1511, the main stack of an application is
+     not reproducible if a 64 bit process has been started from a 32 bit
+     process.  Given that we have enough virtual address space on 64 bit
+     anyway, we now always move the main thread stack to the stack area
+     reserved for pthread stacks.  This allows a reproducible stack space
+     under our own control and avoids collision with the OS. */
+  if (!dynamically_loaded)
+    {
+      if (!in_forkee || fork_info->from_main)
+	{
+	  /* Must be static since it's referenced after the stack and frame
+	     pointer registers have been changed. */
+	  static PVOID allocationbase;
+	  SIZE_T commitsize = in_forkee ? (PBYTE) fork_info->stackbase
+					  - (PBYTE) fork_info->stacklimit
+					: 0;
+	  PVOID stackaddr = create_new_main_thread_stack (allocationbase,
+							  commitsize);
+	  if (stackaddr)
+	    {
+	      /* Set stack pointer to new address.  Set frame pointer to
+	         stack pointer and subtract 32 bytes for shadow space. */
+	      __asm__ ("\n\
+		       movq %[ADDR], %%rsp \n\
+		       movq  %%rsp, %%rbp  \n\
+		       subq  $32,%%rsp     \n"
+		       : : [ADDR] "r" (stackaddr));
+	      /* We're on the new stack now.  Free up space taken by the former
+		 main thread stack and set DeallocationStack correctly. */
+	      VirtualFree (NtCurrentTeb ()->DeallocationStack, 0, MEM_RELEASE);
+	      NtCurrentTeb ()->DeallocationStack = allocationbase;
+	    }
+	}
+      else
+	fork_info->alloc_stack ();
+    }
+#else
   /* Handle WOW64 process on XP/2K3 which has been started from native 64 bit
      process.  See comment in wow64_test_for_64bit_parent for a full problem
      description. */
@@ -1069,40 +1107,32 @@ _dll_crt0 ()
     {
       /* Must be static since it's referenced after the stack and frame
 	 pointer registers have been changed. */
-      static PVOID allocationbase = 0;
+      static PVOID allocationbase;
 
-      /* Check if we just move the stack.  If so, wow64_revert_to_original_stack
-	 returns a non-NULL, 16 byte aligned address.  See comments in
-	 wow64_revert_to_original_stack for the gory details. */
       PVOID stackaddr = wow64_revert_to_original_stack (allocationbase);
       if (stackaddr)
       	{
-	  /* 2nd half of the stack move.  Set stack pointer to new address.
-	     Set frame pointer to 0. */
+	  /* Set stack pointer to new address.  Set frame pointer to 0. */
 	  __asm__ ("\n\
 		   movl  %[ADDR], %%esp \n\
 		   xorl  %%ebp, %%ebp   \n"
 		   : : [ADDR] "r" (stackaddr));
-	  /* Now we're back on the original stack.  Free up space taken by the
+	  /* We're back on the original stack now.  Free up space taken by the
 	     former main thread stack and set DeallocationStack correctly. */
 	  VirtualFree (NtCurrentTeb ()->DeallocationStack, 0, MEM_RELEASE);
 	  NtCurrentTeb ()->DeallocationStack = allocationbase;
 	}
       else
-	/* Fall back to respawn if wow64_revert_to_original_stack fails. */
+	/* Fall back to respawning if creating a new stack fails. */
 	wow64_respawn_process ();
     }
-#endif /* !__x86_64__ */
-  _feinitialise ();
-#ifndef __x86_64__
   main_environ = user_data->envptr;
-#endif
   if (in_forkee)
-    {
-      fork_info->alloc_stack ();
-      _main_tls = &_my_tls;
-    }
+    fork_info->alloc_stack ();
+#endif
 
+  _feinitialise ();
+  _main_tls = &_my_tls;
   _main_tls->call ((DWORD (*) (void *, void *)) dll_crt0_1, NULL);
 }
 

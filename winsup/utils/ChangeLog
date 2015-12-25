@@ -1,3 +1,110 @@
+2015-12-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* setfacl.cc (delace): New helper function to delete a single ACE.
+	(delacl): Call delace.
+	(modacl): Ditto, if entry is supposed to get deleted.  Align comments.
+
+2015-12-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* setfacl.cc (modacl): Move recomputing mask into new function.
+	(check_got_mask): New function checking if mask is in input.
+	(recompute_mask): New function to recompute mask.
+	(addmissing): Align mask computation to Linux setfacl.
+	(setfacl): Call check_got_mask and recompute_mask on Set, Delete and
+	Modify actions.
+	(usage): Rename --substitute to --set.
+	(longopts): Add --set option.
+
+2015-12-20  Houder  <houder@xs4all.nl>
+
+	* setfacl.cc (longopts): Drop accidentally requiring an argument to
+	the --mask and --no-mask options.
+
+2015-12-19  Houder  <houder@xs4all.nl>
+
+	* setfacl.cc (opts): Add colon to x option.
+
+2015-12-06  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygpath.cc (absolute_flag): Initialize to CCP_RELATIVE to simplify
+	expressions.
+	(cygdrive_flag): New global flag.
+	(long_options): Add --proc-cygdrive option.
+	(options): Add -U option.
+	(usage): Add description for -U option.
+	(do_sysfolders): Or cygdrive_flag to cygwin_conv_path call.
+	(do_pathconv): Simply or absolute_flag to conv_func.  Or
+	cygdrive_flag to conv_func.
+	(do_options): Initalize absolute_flag to CCP_RELATIVE.  Initialize new
+	cygdrive_flag.  Set absolute_flag to CCP_ABSOLUTE on -a.  Set
+	cygdrive_flag to CCP_PROC_CYGDRIVE on -U.
+
+2015-11-26  Michael Kwasigroch  <mkwasigr@web.de>
+
+	* kill.cc (strsigno): Don't call sys_sigabbrev for signal 0.
+	(listsig): Don't call strsigno for signal 0.
+
+2015-11-18  Corinna Vinschen  <corinna@vinschen.de>
+
+	* setfacl.c (action_t): Rename DeleteAll to DeleteExt.  Add
+	DeleteAll.  Rearrange for bit-wise testing later in the code.
+	(delallacl): Handle -b -k combination.
+	(setfacl): Handle DeleteExt/DeleteAll.
+	(usage): Fix -b/-k output.  Rearrange output to better fill 80
+	columns. 
+	(main): Allow to combine -b and -k.
+
+2015-11-18  Corinna Vinschen  <corinna@vinschen.de>
+
+	Reapply POSIX ACL changes.
+
+	* getfacl.c (main): Special-case SYSTEM and Admins group.  Add comments.
+
+	* setfacl.c: Align more to Linux tool.
+	(delacl): New function to delete acl entries only.
+	(modacl): Drop delete functionality.  Add handling of recomputing the
+	mask and default mask values.
+	(delallacl): Rename from delacl.
+	(setfacl): Call delacl in Delete case.  Call delallacl in DeleteAll
+	and DeleteDef case.
+	(usage): Accommodate new options.  Rearrange and rephrase slightly.
+	(longopts): Emit 'x' in --delete case.  Add --no-mask and --mask
+	options.
+	(opts): Add -x and -n options.
+	(main): Handle -d and -x the same.  Handle -n and --mask options.
+	Drop handling for -r option.
+
+	* getfacl.c (usage): Align more closely to Linux version.  Add new
+	options -c, -e, -E.  Change formatting to accommodate longer options.
+	(longopts): Rename --noname to --numeric.  Keep --noname for backward
+	compatibility.  Add --omit-header, --all-effective and --no-effective
+	options.
+	(opts): Add -c, -e and -E option.
+	(main): Handle new -c, -e, and -E options.
+
+2015-10-22  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* getconf.c (conf_table): Add LEVEL*_CACHE_* variables.
+
+2015-08-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygcheck.cc (dump_sysinfo): Fix missing commas in products array.
+
+2015-08-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygcheck.cc (load_cygwin): Only unload cygwin DLL if not running
+	under a debugger.  Explain why.
+
+2015-08-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygcheck.cc (dump_sysinfo): Correctly handle Windows 10/Server 2016.
+	Add missing product types.
+
+2015-08-30  Corinna Vinschen  <corinna@vinschen.de>
+
+	* cygcheck.cc (track_down): Skip error output for "api-ms-win-"
+	downlevel DLLs.
+
 2015-08-03  Corinna Vinschen  <corinna@vinschen.de>
 
 	* strace.cc (main2): Don't call setvbuf on NULL descriptor.

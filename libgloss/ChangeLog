@@ -1,3 +1,94 @@
+2015-12-17  DJ Delorie  <dj@redhat.com>
+
+	* configure.in: Don't build default libnosys for msp430
+	* configure: Regenerate.
+	* msp430/Makefile: Rename libcio to libnosys.
+
+	* msp430/cio.c: Remove, replace with...
+	* msp430/cio.S: New, this.
+
+2015-12-16  Kevin Buettner  <kevinb@redhat.com>
+
+	* rl78/write.c (_write): Don't output CR when LF is encountered.
+
+2015-12-04  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/msp430xl-sim.ld (__high_bsssize): Define.
+
+2015-11-23  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/msp430xl-sim.ld (__high_bsssize): Provide.
+
+2015-11-12  Anton Kolesov  <Anton.Kolesov@synopsys.com>
+
+	* configure: Add ARC support.
+	* configure.in: Likewise.
+	* arc/Makefile.in: Likewise.
+	* arc/aclocal.m4: Likewise.
+	* arc/configure: Likewise.
+	* arc/configure.in: Likewise.
+	* arc/crt0.S: Likewise.
+	* arc/libcfunc.c: Likewise.
+	* arc/nsim-syscall.h: Likewise.
+	* arc/nsim-syscalls.c: Likewise.
+	* arc/nsim.specs: Likewise.
+	* arc/sbrk.c: Likewise.
+
+2015-10-20  Kaushik Phatak <kaushik.phatak@kpit.com>
+
+        * rl78/crt0.S (_start): Fixed code that clears .bss
+
+2015-10-06  Nick Clifton  <nickc@redhat.com>
+
+	* msp430/msp430-sim.ld: Add .persistent section.
+	Tidy up section layout.
+	Start RAM above hardware multiply registers.
+	* msp430/msp430xl-sim.ld: Likewise.
+
+2015-09-04  James Bowman  <james.bowman@ftdichip.com>
+
+	* configure.in: Add ft32 support.
+	* ft32/sbrk.c: New file.
+	* ft32/sim-close.S: Ditto.
+	* ft32/sim-exit.S: Ditto.
+	* ft32/sim-inbyte.c: Ditto.
+	* ft32/sim.ld: Ditto.
+	* ft32/sim-lseek.c: Ditto.
+	* ft32/sim-lseek.S: Ditto.
+	* ft32/sim-open.S: Ditto.
+	* ft32/sim-read.S: Ditto.
+	* ft32/sim-time.c: Ditto.
+	* ft32/sim-unlink.S: Ditto.
+	* ft32/sim-write.S: Ditto.
+	* ft32/stat.c: Ditto.
+	* ft32/configure.in: Ditto.
+	* ft32/crt0.S: Ditto.
+	* ft32/fstat.c: Ditto.
+	* ft32/getpid.c: Ditto.
+	* ft32/isatty.c: Ditto.
+	* ft32/kill.c: Ditto.
+	* ft32/Makefile.in: Ditto.
+
+2015-08-20  Nick Clifton  <nickc@redhat.com>
+
+	PR libgloss/18786
+	* msp430/crt0.S: Remove watchdog disabling code.
+
+2015-08-07 Stefan Wallentowitz <stefan.wallentowitz@tum.de>
+
+	* or1k/boards/optimsoc.S: Fix symbol name
+	* or1k/crt0.S: Remove paranthesis
+
+2015-08-07 Stefan Wallentowitz <stefan.wallentowitz@tum.de>
+
+	* or1k/crt0.S: Add exception nesting
+	* or1k/exceptions-asm.S: ditto
+	* or1k/util.c: ditto
+
+2015-08-07 Stefan Wallentowitz <stefan.wallentowitz@tum.de>
+
+	* or1k/sbrk.c: Make heap end globally visible
+
 2015-08-04  Nick Clifton  <nickc@redhat.com>
 
 	* rl78/rl78-sim.ld: Provide a value for __rl78_abs__.

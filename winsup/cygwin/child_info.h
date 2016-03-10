@@ -39,7 +39,7 @@ enum child_status
 #define EXEC_MAGIC_SIZE sizeof(child_info)
 
 /* Change this value if you get a message indicating that it is out-of-sync. */
-#define CURR_CHILD_INFO_MAGIC 0x4a91a908U
+#define CURR_CHILD_INFO_MAGIC 0x30ea98f6U
 
 #define NPROCS	256
 
@@ -103,11 +103,13 @@ class child_info_fork: public child_info
 public:
   HANDLE forker_finished;// for synchronization with child
   jmp_buf jmp;		// where child will jump to
-  void *stackaddr;	// address of parent stack
-  void *stacktop;	// location of top of parent stack
-  void *stackbottom;	// location of bottom of parent stack
+  void *stackaddr;	// DeallocationStack or user-provided allocation address
+			// of parent thread
+  void *stacklimit;	// StackLimit of parent thread
+  void *stackbase;	// StackBase of parent thread
   size_t guardsize;     // size of POSIX guard region or (size_t) -1 if
 			// user stack
+  bool from_main;	// true if started from parent's main thread
   char filler[4];
   child_info_fork ();
   void __reg1 handle_fork ();

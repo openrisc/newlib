@@ -10,13 +10,14 @@ extern "C" {
 #include <sys/cdefs.h>
 #include <sys/features.h>
 #include <sys/types.h>
+#include <sys/_sigset.h>
 #include <sys/_timespec.h>
 
 /* #ifndef __STRICT_ANSI__*/
 
-/* Cygwin defines it's own sigset_t in include/cygwin/signal.h */
-#ifndef __CYGWIN__
-typedef unsigned long sigset_t;
+#if !defined(_SIGSET_T_DECLARED)
+#define	_SIGSET_T_DECLARED
+typedef	__sigset_t	sigset_t;
 #endif
 
 #if defined(__rtems__)
@@ -183,9 +184,9 @@ int _EXFUN(pthread_sigmask, (int how, const sigset_t *set, sigset_t *oset));
 int _EXFUN(_kill, (pid_t, int));
 #endif /* _COMPILING_NEWLIB */
 #endif /* __CYGWIN__ || __rtems__ */
-#if defined(__CYGWIN__) || defined(__rtems__) || defined(__SPU__)
+
 int _EXFUN(kill, (pid_t, int));
-#endif /* __CYGWIN__ || __rtems__ || __SPU__ */
+
 #if defined(__CYGWIN__) || defined(__rtems__)
 int _EXFUN(killpg, (pid_t, int));
 int _EXFUN(sigaction, (int, const struct sigaction *, struct sigaction *));
@@ -350,6 +351,12 @@ int _EXFUN(sigqueue, (pid_t pid, int signo, const union sigval value));
 
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(__CYGWIN__)
+#if __POSIX_VISIBLE >= 200809
+#include <sys/ucontext.h>
+#endif
 #endif
 
 #ifndef _SIGNAL_H_

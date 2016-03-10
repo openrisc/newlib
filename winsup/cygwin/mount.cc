@@ -1,7 +1,7 @@
 /* mount.cc: mount handling.
 
    Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014 Red Hat, Inc.
+   2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015 Red Hat, Inc.
 
 This file is part of Cygwin.
 
@@ -182,8 +182,7 @@ fs_info::update (PUNICODE_STRING upath, HANDLE in_vol)
 
   clear ();
   /* Always caseinsensitive.  We really just need access to the drive. */
-  InitializeObjectAttributes (&attr, upath, OBJ_CASE_INSENSITIVE, NULL,
-			      NULL);
+  InitializeObjectAttributes (&attr, upath, OBJ_CASE_INSENSITIVE, NULL, NULL);
   if (in_vol)
     vol = in_vol;
   else
@@ -232,6 +231,33 @@ fs_info::update (PUNICODE_STRING upath, HANDLE in_vol)
   uint32_t hash = 0;
   if (NT_SUCCESS (status))
     {
+      /* If the FS doesn't return a valid serial number (PrlSF is a candidate),
+	 create reproducible serial number from path.  We need this to create
+	 a unique per-drive/share hash. */
+      if (ffvi_buf.ffvi.VolumeSerialNumber == 0)
+	{
+	  UNICODE_STRING path_prefix;
+	  WCHAR *p;
+
+	  if (upath->Buffer[5] == L':' && upath->Buffer[6] == L'\\')
+	    p = upath->Buffer + 6;
+	  else
+	    {
+	      /* We're expecting an UNC path.  Move p to the backslash after
+	         "\??\UNC\server\share" or the trailing NUL. */
+	      p = upath->Buffer + 7;  /* Skip "\??\UNC" */
+	      int bs_cnt = 0;
+
+	      while (*++p)
+		if (*p == L'\\')
+		    if (++bs_cnt > 1)
+		      break;
+	    }
+	  RtlInitCountedUnicodeString (&path_prefix, upath->Buffer,
+				       (p - upath->Buffer) * sizeof (WCHAR));
+	  ffvi_buf.ffvi.VolumeSerialNumber = hash_path_name ((ino_t) 0,
+							     &path_prefix);
+	}
       fs_info *fsi = fsi_cache.search (&ffvi_buf.ffvi, hash);
       if (fsi)
 	{
@@ -370,7 +396,10 @@ fs_info::update (PUNICODE_STRING upath, HANDLE in_vol)
 	  && !is_unixfs (RtlEqualUnicodeString (&fsname, &ro_u_unixfs, FALSE))
 	  /* AFSRDRFsd == Andrew File System.  Doesn't support DOS attributes.
 	     Only native symlinks are supported. */
-	  && !is_afs (RtlEqualUnicodeString (&fsname, &ro_u_afs, FALSE)))
+	  && !is_afs (RtlEqualUnicodeString (&fsname, &ro_u_afs, FALSE))
+	  /* PrlSF == Parallels Desktop File System.  Has a bug in
+	     FileNetworkOpenInformation, see below. */
+	  && !is_prlfs (RtlEqualUnicodeString (&fsname, &ro_u_prlfs, FALSE)))
 	{
 	  /* Known remote file system with buggy open calls.  Further
 	     explanation in fhandler.cc (fhandler_disk_file::open_fs). */
@@ -402,6 +431,10 @@ fs_info::update (PUNICODE_STRING upath, HANDLE in_vol)
 	     only support this if the filename is non-null and the handle is
 	     the handle to a directory. NcFsd IR10 is supposed to be ok. */
 	  has_buggy_reopen (is_netapp () || is_nwfs ());
+	  /* Netapp and Parallels Desktop FS have problems with the
+	     FileNetworkOpenInformation info class.  Netapp doesn't
+	     implement it at all, Parallels always returns a size of 0. */
+	  has_broken_fnoi (is_netapp () || is_prlfs ());
 	}
     }
   if (!got_fs ()
@@ -758,14 +791,28 @@ mount_info::get_mounts_here (const char *parent_dir, int parent_dir_len,
 
 /* cygdrive_posix_path: Build POSIX path used as the
    mount point for cygdrives created when there is no other way to
-   obtain a POSIX path from a Win32 one. */
+   obtain a POSIX path from a Win32 one.
+
+   Recognized flag values:
+   - 0x001:                      Add trailing slash.
+   - 0x200 == CCP_PROC_CYGDRIVE: Return /proc/cygdrive rather than actual
+                                 cygdrive prefix. */
 
 void
-mount_info::cygdrive_posix_path (const char *src, char *dst, int trailing_slash_p)
+mount_info::cygdrive_posix_path (const char *src, char *dst, int flags)
 {
-  int len = cygdrive_len;
+  int len;
 
-  memcpy (dst, cygdrive, len + 1);
+  if (flags & CCP_PROC_CYGDRIVE)
+    {
+      len = sizeof ("/proc/cygdrive/") - 1;
+      memcpy (dst, "/proc/cygdrive/", len + 1);
+    }
+  else
+    {
+      len = cygdrive_len;
+      memcpy (dst, cygdrive, len + 1);
+    }
 
   /* Now finish the path off with the drive letter to be used.
      The cygdrive prefix always ends with a trailing slash so
@@ -783,7 +830,7 @@ mount_info::cygdrive_posix_path (const char *src, char *dst, int trailing_slash_
 	n = 2;
       strcpy (dst + len, src + n);
     }
-  slashify (dst, dst, trailing_slash_p);
+  slashify (dst, dst, !!(flags & 0x1));
 }
 
 int
@@ -822,7 +869,7 @@ mount_info::cygdrive_win32_path (const char *src, char *dst, int& unit)
 /* src_path is a wide Win32 path. */
 int
 mount_info::conv_to_posix_path (PWCHAR src_path, char *posix_path,
-				int keep_rel_p)
+				int ccp_flags)
 {
   bool changed = false;
   if (!wcsncmp (src_path, L"\\\\?\\", 4))
@@ -837,7 +884,7 @@ mount_info::conv_to_posix_path (PWCHAR src_path, char *posix_path,
   tmp_pathbuf tp;
   char *buf = tp.c_get ();
   sys_wcstombs (buf, NT_MAX_PATH, src_path);
-  int ret = conv_to_posix_path (buf, posix_path, keep_rel_p);
+  int ret = conv_to_posix_path (buf, posix_path, ccp_flags);
   if (changed)
     src_path[0] = L'C';
   return ret;
@@ -845,23 +892,22 @@ mount_info::conv_to_posix_path (PWCHAR src_path, char *posix_path,
 
 int
 mount_info::conv_to_posix_path (const char *src_path, char *posix_path,
-				int keep_rel_p)
+				int ccp_flags)
 {
   int src_path_len = strlen (src_path);
-  int relative_path_p = !isabspath (src_path);
-  int trailing_slash_p;
+  int relative = !isabspath (src_path);
+  int append_slash;
 
   if (src_path_len <= 1)
-    trailing_slash_p = 0;
+    append_slash = 0;
   else
     {
       const char *lastchar = src_path + src_path_len - 1;
-      trailing_slash_p = isdirsep (*lastchar) && lastchar[-1] != ':';
+      append_slash = isdirsep (*lastchar) && lastchar[-1] != ':';
     }
 
-  debug_printf ("conv_to_posix_path (%s, %s, %s)", src_path,
-		keep_rel_p ? "keep-rel" : "no-keep-rel",
-		trailing_slash_p ? "add-slash" : "no-add-slash");
+  debug_printf ("conv_to_posix_path (%s, 0x%x, %s)", src_path, ccp_flags,
+		append_slash ? "add-slash" : "no-add-slash");
   MALLOC_CHECK;
 
   if (src_path_len >= NT_MAX_PATH)
@@ -873,7 +919,7 @@ mount_info::conv_to_posix_path (const char *src_path, char *posix_path,
   /* FIXME: For now, if the path is relative and it's supposed to stay
      that way, skip mount table processing. */
 
-  if (keep_rel_p && relative_path_p)
+  if ((ccp_flags & CCP_RELATIVE) && relative)
     {
       slashify (src_path, posix_path, 0);
       debug_printf ("%s = conv_to_posix_path (%s)", posix_path, src_path);
@@ -920,8 +966,9 @@ mount_info::conv_to_posix_path (const char *src_path, char *posix_path,
 	strcat (posix_path, "/");
       if (nextchar)
 	slashify (p,
-		  posix_path + addslash + (mi.posix_pathlen == 1 ? 0 : mi.posix_pathlen),
-		  trailing_slash_p);
+		  posix_path + addslash + (mi.posix_pathlen == 1
+		  ? 0 : mi.posix_pathlen),
+		  append_slash);
 
       if (cygheap->root.exists ())
 	{
@@ -939,7 +986,7 @@ mount_info::conv_to_posix_path (const char *src_path, char *posix_path,
     {
       const char *p = pathbuf + cygheap->root.native_length ();
       if (*p)
-	slashify (p, posix_path, trailing_slash_p);
+	slashify (p, posix_path, append_slash);
       else
 	{
 	  posix_path[0] = '/';
@@ -954,12 +1001,12 @@ mount_info::conv_to_posix_path (const char *src_path, char *posix_path,
      caller must want an absolute path (otherwise we would have returned
      above).  So we always return an absolute path at this point. */
   if (isdrive (pathbuf))
-    cygdrive_posix_path (pathbuf, posix_path, trailing_slash_p);
+    cygdrive_posix_path (pathbuf, posix_path, append_slash | ccp_flags);
   else
     {
       /* The use of src_path and not pathbuf here is intentional.
 	 We couldn't translate the path, so just ensure no \'s are present. */
-      slashify (src_path, posix_path, trailing_slash_p);
+      slashify (src_path, posix_path, append_slash);
     }
 
 out:
@@ -1139,6 +1186,8 @@ mount_info::from_fstab_line (char *line, bool user)
   unsigned mount_flags = MOUNT_SYSTEM | MOUNT_BINARY;
   if (!strcmp (fs_type, "cygdrive"))
     mount_flags |= MOUNT_NOPOSIX;
+  if (!strcmp (fs_type, "usertemp"))
+    mount_flags |= MOUNT_IMMUTABLE;
   if (!fstab_read_flags (&c, mount_flags, false))
     return true;
   if (mount_flags & MOUNT_BIND)
@@ -1162,6 +1211,22 @@ mount_info::from_fstab_line (char *line, bool user)
       cygdrive_flags = mount_flags | MOUNT_CYGDRIVE;
       slashify (posix_path, cygdrive, 1);
       cygdrive_len = strlen (cygdrive);
+    }
+  else if (!strcmp (fs_type, "usertemp"))
+    {
+      WCHAR tmp[PATH_MAX + 1];
+
+      if (GetTempPathW (PATH_MAX, tmp))
+	{
+	  tmp_pathbuf tp;
+	  char *mb_tmp = tp.c_get ();
+	  sys_wcstombs (mb_tmp, PATH_MAX, tmp);
+
+	  mount_flags |= MOUNT_USER_TEMP;
+	  int res = mount_table->add_item (mb_tmp, posix_path, mount_flags);
+	  if (res && get_errno () == EMFILE)
+	    return false;
+	}
     }
   else
     {
@@ -1527,6 +1592,7 @@ fs_names_t fs_names[] = {
     { "nwfs", false },
     { "ncfsd", false },
     { "afs", false },
+    { "prlfs", false },
     { NULL, false }
 };
 
@@ -1618,6 +1684,9 @@ fillout_mntent (const char *native_path, const char *posix_path, unsigned flags)
 
   if (flags & (MOUNT_BIND))
     strcat (_my_tls.locals.mnt_opts, (char *) ",bind");
+
+  if (flags & (MOUNT_USER_TEMP))
+    strcat (_my_tls.locals.mnt_opts, (char *) ",usertemp");
 
   ret.mnt_opts = _my_tls.locals.mnt_opts;
 

@@ -760,6 +760,49 @@ public:
 };
 
 thread_allocator thr_alloc NO_COPY;
+
+/* Just set up a system-like main thread stack from the pthread stack area
+   maintained by the thr_alloc class.  See the description in the x86_64-only
+   code in _dll_crt0 to understand why we have to do this. */
+PVOID
+create_new_main_thread_stack (PVOID &allocationbase, SIZE_T parent_commitsize)
+{
+  PIMAGE_DOS_HEADER dosheader;
+  PIMAGE_NT_HEADERS ntheader;
+  SIZE_T stacksize;
+  ULONG guardsize;
+  SIZE_T commitsize;
+  PBYTE stacklimit;
+
+  dosheader = (PIMAGE_DOS_HEADER) GetModuleHandle (NULL);
+  ntheader = (PIMAGE_NT_HEADERS)
+	     ((PBYTE) dosheader + dosheader->e_lfanew);
+  stacksize = ntheader->OptionalHeader.SizeOfStackReserve;
+  stacksize = roundup2 (stacksize, wincap.allocation_granularity ());
+
+  allocationbase
+	= thr_alloc.alloc (ntheader->OptionalHeader.SizeOfStackReserve);
+  guardsize = wincap.def_guard_page_size ();
+  if (parent_commitsize)
+    commitsize = (SIZE_T) parent_commitsize;
+  else
+    commitsize = ntheader->OptionalHeader.SizeOfStackCommit;
+  commitsize = roundup2 (commitsize, wincap.page_size ());
+  if (commitsize > stacksize - guardsize - wincap.page_size ())
+    commitsize = stacksize - guardsize - wincap.page_size ();
+  stacklimit = (PBYTE) allocationbase + stacksize - commitsize - guardsize;
+  /* Setup guardpage. */
+  if (!VirtualAlloc (stacklimit, guardsize,
+		     MEM_COMMIT, PAGE_READWRITE | PAGE_GUARD))
+    return NULL;
+  /* Setup committed region. */
+  stacklimit += guardsize;
+  if (!VirtualAlloc (stacklimit, commitsize, MEM_COMMIT, PAGE_READWRITE))
+    return NULL;
+  NtCurrentTeb()->Tib.StackBase = ((PBYTE) allocationbase + stacksize);
+  NtCurrentTeb()->Tib.StackLimit = stacklimit;
+  return ((PBYTE) allocationbase + stacksize - 16);
+}
 #endif
 
 HANDLE WINAPI
@@ -898,10 +941,11 @@ err:
 }
 
 #ifdef __x86_64__
-/* These functions are almost verbatim NetBSD code, just wrapped in the
-   minimum required code to make them work with the MS AMD64 ABI.
-   See NetBSD src/lib/libc/amd64/string/memset.S
-   and NetBSD src/lib/libc/amd64/string/bcopy.S */
+/* These functions are almost verbatim FreeBSD code (even if the header of
+   one file mentiones NetBSD), just wrapped in the minimum required code to
+   make them work with the MS AMD64 ABI.
+   See FreeBSD src/lib/libc/amd64/string/memset.S
+   and FreeBSD src/lib/libc/amd64/string/bcopy.S */
 
 asm volatile ("								\n\
 /*									\n\

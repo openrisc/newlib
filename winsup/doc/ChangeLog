@@ -1,3 +1,91 @@
+2015-12-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* utils.xml (setfacl): Rename --substitute to --set.
+	* new-features.xml (ov-new2.4): Rephrase setfacl changes.
+
+2015-12-07  Johannes Schindelin  <johannes.schindelin@gmx.de>
+
+	* pathnames.xml: Document the new usertemp file system type.
+
+2015-12-06  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.4): Document cygpath -U option.
+	* utils.xml (cygpath): Ditto.
+	* path.xml (func-cygwin-path): Add CCP_PROC_CYGDRIVE description.
+
+2015-11-25  David Macek  <david.macek.0@gmail.com>
+
+	* faq-using.xml: Add MacType to the BLODA.  Fix formatting.
+
+2015-11-24  David Macek  <david.macek.0@gmail.com>
+
+	* pathnames.xml: Add a section describing peculiarities of how Cygwin
+	creates NTFS symlinks.
+
+2015-11-24  David Macek  <david.macek.0@gmail.com>
+
+	* faq-using.xml: Add Forefront TMG to the BLODA.
+
+2015-11-21  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.4): Document fa_IR and ps_AF locale fixes.
+
+2015-11-18  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.4): Add new ACL changes.
+
+2015-11-18  Corinna Vinschen  <corinna@vinschen.de>
+
+	* utils.xml (setfacl): Accommodate -b/-k change.
+	* new-features.xml (ov-new2.4): Add setfacl -b/-k change.
+
+2015-11-18  Corinna Vinschen  <corinna@vinschen.de>
+
+	* utils.xml (setfacl): Show new option output.
+	(getfacl): Show new option output.
+
+2015-11-17  Yaakov Selkowitz  <yselkowi@redhat.com>
+
+	* new-features.xml (ov-new2.4): New section. Document rpmatch.
+	* posix.xml (std-bsd): Add rpmatch.
+
+2015-11-02  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.3): Document Parallels Desktop FS support.
+
+2015-10-27  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.3): Document strftime %s addition.
+
+2015-10-22  Corinna Vinschen  <corinna@vinschen.de>
+
+	* posix.xml (std-iso): New section.
+	(std-deprec): Rearrange title text.
+	* new-features.xml (ov-new2.3): Document aligned_alloc, at_quick_exit,
+	quick_exit.
+
+2015-10-06  Ken Brown  <kbrown@cornell.edu>
+
+	* faq-using.xml (faq.using.same-with-permissions): New entry.
+
+2015-09-07  Brian Inglis  <Brian.Inglis@SystematicSw.ab.ca>
+
+	* faq-using.xml (faq.using.man): Replace makewhatis with mandb.
+
+2015-08-29  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.3): Document sysconf cache addition.
+
+2015-08-27  Corinna Vinschen  <corinna@vinschen.de>
+
+	* new-features.xml (ov-new2.3): New section, document posix_madvise
+	POSIX_MADV_WILLNEED/POSIX_MADV_DONTNEED change.
+
+2015-08-18  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* faq-using.xml (faq.using.bloda): Add Lavasoft Web Companion to
+	BLODA list.
+
 2015-08-03  Jon Turney  <jon.turney@dronecode.org.uk>
 
 	* faq-programming.xml: Improve debugging-cygwin answer.

@@ -1,6 +1,6 @@
 /* nlsfuncs.cc: NLS helper functions
 
-   Copyright 2010, 2011, 2012, 2013 Red Hat, Inc.
+   Copyright 2010, 2011, 2012, 2013, 2015 Red Hat, Inc.
 
 This file is part of Cygwin.
 
@@ -31,6 +31,8 @@ details. */
 
 #define getlocaleinfo(category,type) \
 	    __getlocaleinfo(lcid,(type),_LC(category))
+#define setlocaleinfo(category,val) \
+	    __setlocaleinfo(_LC(category),(val))
 #define eval_datetimefmt(type,flags) \
 	    __eval_datetimefmt(lcid,(type),(flags),&lc_time_ptr,\
 			       lc_time_end-lc_time_ptr)
@@ -88,7 +90,9 @@ __get_lcid_from_locale (const char *name)
       *c = '-';
       mbstowcs (wlocale, locale, ENCODING_LEN + 1);
       lcid = LocaleNameToLCID (wlocale, 0);
-      if (lcid == 0)
+      /* Bug on Windows 10: LocaleNameToLCID returns LOCALE_CUSTOM_UNSPECIFIED
+         for unknown locales. */
+      if (lcid == 0 || lcid == LOCALE_CUSTOM_UNSPECIFIED)
 	{
 	  /* Unfortunately there are a couple of locales for which no form
 	     without a Script part per RFC 4646 exists.
@@ -127,24 +131,29 @@ __get_lcid_from_locale (const char *name)
 		  {
 		    /* Vista/2K8 is missing sr-ME and sr-RS.  It has only the
 		       deprecated sr-CS.  So we map ME and RS to CS here. */
-		    if (lcid == 0)
+		    if (lcid == 0 || lcid == LOCALE_CUSTOM_UNSPECIFIED)
 		      lcid = LocaleNameToLCID (L"sr-Cyrl-CS", 0);
 		    /* "@latin" modifier for the sr_XY locales changes
 			collation behaviour so lcid should accommodate that
 			by being set to the Latin sublang. */
-		    if (lcid != 0 && has_modifier ("@latin"))
+		    if (lcid != 0 && lcid != LOCALE_CUSTOM_UNSPECIFIED
+			&& has_modifier ("@latin"))
 		      lcid = MAKELANGID (lcid & 0x3ff, (lcid >> 10) - 1);
 		  }
 		else if (!strncmp (locale, "uz-", 3))
 		  {
 		    /* Equivalent for "@cyrillic" modifier in uz_UZ locale */
-		    if (lcid != 0 && has_modifier ("@cyrillic"))
+		    if (lcid != 0 && lcid != LOCALE_CUSTOM_UNSPECIFIED
+			&& has_modifier ("@cyrillic"))
 		      lcid = MAKELANGID (lcid & 0x3ff, (lcid >> 10) + 1);
 		  }
 		break;
 	      }
 	}
-      last_lcid = lcid ?: (LCID) -1;
+      if (lcid && lcid != LOCALE_CUSTOM_UNSPECIFIED)
+	last_lcid = lcid;
+      else
+	last_lcid = (LCID) -1;
       debug_printf ("LCID=%04y", last_lcid);
       return last_lcid;
     }
@@ -355,6 +364,20 @@ __getlocaleinfo (LCID lcid, LCTYPE type, char **ptr, size_t size)
   ret = (wchar_t *) *ptr;
   num = GetLocaleInfoW (lcid, type, ret, size / sizeof (wchar_t));
   *ptr = (char *) (ret + num);
+  return ret;
+}
+
+static wchar_t *
+__setlocaleinfo (char **ptr, size_t size, wchar_t val)
+{
+  wchar_t *ret;
+
+  if ((uintptr_t) *ptr % 1)
+    ++*ptr;
+  ret = (wchar_t *) *ptr;
+  ret[0] = val;
+  ret[1] = L'\0';
+  *ptr = (char *) (ret + 2);
   return ret;
 }
 
@@ -861,11 +884,28 @@ __set_lc_numeric_from_win (const char *name,
     memcpy (_numeric_locale, _C_numeric_locale, sizeof (struct lc_numeric_T));
   else
     {
-      /* decimal_point */
-      _numeric_locale->wdecimal_point = getlocaleinfo (numeric, LOCALE_SDECIMAL);
+      /* decimal_point and thousands_sep */
+      if (lcid == 0x0429)	/* fa_IR.  Windows decimal_point is slash,
+					   correct is dot */
+	{
+	  _numeric_locale->wdecimal_point = setlocaleinfo (numeric, L'.');
+	  _numeric_locale->wthousands_sep = setlocaleinfo (numeric, L',');
+	}
+      else if (lcid == 0x0463)	/* ps_AF.  Windows decimal_point is dot,
+					   thousands_sep is comma, correct are
+					   arabic separators. */
+	{
+	  _numeric_locale->wdecimal_point = setlocaleinfo (numeric, 0x066b);
+	  _numeric_locale->wthousands_sep = setlocaleinfo (numeric, 0x066c);
+	}
+      else
+	{
+	  _numeric_locale->wdecimal_point = getlocaleinfo (numeric,
+							   LOCALE_SDECIMAL);
+	  _numeric_locale->wthousands_sep = getlocaleinfo (numeric,
+							   LOCALE_STHOUSAND);
+	}
       _numeric_locale->decimal_point = charfromwchar (numeric, wdecimal_point);
-      /* thousands_sep */
-      _numeric_locale->wthousands_sep = getlocaleinfo (numeric, LOCALE_STHOUSAND);
       _numeric_locale->thousands_sep = charfromwchar (numeric, wthousands_sep);
       /* grouping */
       _numeric_locale->grouping = conv_grouping (lcid, LOCALE_SGROUPING,
@@ -946,14 +986,27 @@ __set_lc_monetary_from_win (const char *name,
       else
 	_monetary_locale->currency_symbol = charfromwchar (monetary,
 							   wcurrency_symbol);
-      /* mon_decimal_point */
-      _monetary_locale->wmon_decimal_point = getlocaleinfo (monetary,
-							    LOCALE_SMONDECIMALSEP);
+      /* mon_decimal_point and mon_thousands_sep */
+      if (lcid == 0x0429 || lcid == 0x0463)	/* fa_IR or ps_AF.  Windows
+						   mon_decimal_point is slash
+						   and comma, mon_thousands_sep
+						   is comma and dot, correct
+						   are arabic separators. */
+	{
+	  _monetary_locale->wmon_decimal_point = setlocaleinfo (monetary,
+								0x066b);
+	  _monetary_locale->wmon_thousands_sep = setlocaleinfo (monetary,
+								0x066c);
+	}
+      else
+	{
+	  _monetary_locale->wmon_decimal_point = getlocaleinfo (monetary,
+							LOCALE_SMONDECIMALSEP);
+	  _monetary_locale->wmon_thousands_sep = getlocaleinfo (monetary,
+							LOCALE_SMONTHOUSANDSEP);
+	}
       _monetary_locale->mon_decimal_point = charfromwchar (monetary,
 							   wmon_decimal_point);
-      /* mon_thousands_sep */
-      _monetary_locale->wmon_thousands_sep = getlocaleinfo (monetary,
-							    LOCALE_SMONTHOUSANDSEP);
       _monetary_locale->mon_thousands_sep = charfromwchar (monetary,
 							   wmon_thousands_sep);
       /* mon_grouping */

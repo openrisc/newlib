@@ -37,11 +37,11 @@
       </nav>
       <section>
 
-<p>If you can't install the toolchain to <tt>/opt/or1k-elf</tt> or the
-pre-compiled toolchains can't run on your system, you may need to
-build the toolchain from scratch. This is not that spectacular
-nowadays and can take like an hour maximum. Nevertheless you need some
-basic understanding in how a build GNU process works.</p>
+<p>If you can't run on the prebuilt toolchain on your system or want
+to do a development build, you can build the toolchain from
+scratch. This is not that spectacular nowadays and can take like an
+hour at maximum. Nevertheless you need some basic understanding of how
+a build GNU process works.</p>
 
 <h3>Preparation</h3>
 
@@ -51,7 +51,8 @@ libraries on your computer, along with of course the basic GCC
 toolchain for your host. On a recent Debian/Ubuntu this is done
 with:</p>
 
-<pre><code>sudo apt-get install libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev texinfo build-essential
+<pre><code>sudo apt-get install git libgmp-dev libmpfr-dev libmpc-dev \
+    zlib1g-dev texinfo build-essential flex bison
 </code></pre>
 
 <p>Next you need to setup the environment for your build
@@ -59,7 +60,7 @@ with:</p>
 and <tt>PATH</tt> because later stages need the results from previous
 stages):</p>
 
-<pre><code>export PREFIX=/opt/or1k-elf
+<pre><code>export PREFIX=/opt/toolchains/or1k-elf
 export PATH=$PATH:$PREFIX/bin
 </code></pre>
 
@@ -67,20 +68,25 @@ export PATH=$PATH:$PREFIX/bin
 release snapshot tarballs of the releases. To build from the upstream
 repositories:</p>
 
-<pre><code>git clone git://sourceware.org/git/binutils-gdb.git
+<pre><code>git clone git://sourceware.org/git/binutils-gdb.git binutils
 git clone https://github.com/openrisc/or1k-gcc.git gcc
 git clone git://sourceware.org/git/newlib-cygwin.git newlib
+git clone https://github.com/openrisc/binutils-gdb.git gdb
 </code></pre>
 
 <p>In case you want to build from the development sources you need to
 check out the following set of repositories:</p>
 
-<pre><code>git clone https://github.com/openrisc/or1k-src.git binutils-gdb
+<pre><code>git clone https://github.com/openrisc/binutils-gdb.git binutils
 git clone https://github.com/openrisc/or1k-gcc.git gcc
 git clone https://github.com/openrisc/newlib.git
+ln -s binutils gdb
 </code></pre>
 
-<p>Those repositories differ from the upstream repositories in that there might be changes in the upstream code that have not yet been merged, but also architecture specific code that is not yet in the upstream distribution.</p>
+<p>Those repositories differ from the upstream repositories in that
+there might be changes in the upstream code that have not yet been
+merged, but also architecture specific code that is not yet in the
+upstream distribution.</p>
 
 <p>Of course you may desire to check out a repository for a certain
 release by checkout of the respective git tag. Once the repositories
@@ -94,7 +100,7 @@ and a lot more programs to handle the binary files for a certain
 architecture. Those can be directly built standalone:</p>
 
 <pre><code>mkdir build-binutils; cd build-binutils
-../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
+../binutils/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
 make
 make install
 cd ..
@@ -140,7 +146,7 @@ cd ..
 architecture:</p>
 
 <pre><code>mkdir build-gdb; cd build-gdb
-../binutils-gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --enable-sim --disable-or1ksim --enable-gdb  --with-sysroot --disable-newlib --disable-libgloss
+../gdb/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-or1ksim --with-sysroot --disable-newlib --disable-libgloss --disable-gas --disable-ld --disable-binutils --disable-gprof --with-system-zlib
 make
 make install
 cd ..

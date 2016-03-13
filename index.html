@@ -92,13 +92,11 @@ handling. An extensive documentation of the functions can be found <a href="docs
 <p>There also is a <a href="tutorial.html">short tutorial</a> with
 some basic examples is also available</p>
 
-<h3>Download the Toolchain</h3>
-
-<h4>Releases</h4>
+<h3>Download and Install the Toolchain</h3>
 
 <p>You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
-different components that need to be installed
+different components that are preferably installed
 to <tt>/opt/toolchains/or1k-elf</tt>. You can find all
 releases <a href="https://github.com/openrisc/newlib/releases">here</a>. Those
 are current releases:</p>
@@ -107,8 +105,14 @@ are current releases:</p>
 <li><a href="">GCC 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11</a></li>
 </ul>
 
+After downloading a release you can extract it anywhere in your
+filesystem, preferable to `/opt/toolchains/or1k-elf/`. You need to add
+the toolchain to your path:
 
-<h4>Build status</h4>
+<pre><code>export PATH=/opt/toolchains/or1k-elf/bin:${PATH}
+</code></pre>
+
+<h3>Development Build status</h3>
 
 <p>Whenever something is pushed to the newlib repository, the current
 development versions of Binutils, GCC, (or1k) Newlib and GDB are

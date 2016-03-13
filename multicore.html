@@ -52,58 +52,23 @@ variable <tt>CFLAGS="-D__OR1K_MULTICORE__"</tt>:</p>
 
 <h3>Download the Toolchain</h3>
 
-<h4>Releases</h4>
-
 <p>You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
-different components that need to be installed
-to <tt>/opt/or1k-elf</tt>. You can find all releases <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/">here</a>. The latest release:</p>
+different components that are preferably installed
+to <tt>/opt/toolchains/or1k-elf-multicore</tt>. You can find all
+releases <a href="https://github.com/openrisc/newlib/releases">here</a>. Those
+are current releases:</p>
 
 <ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-multicore-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-multicore-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-multicore-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-multicore-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
+<li><a href="">GCC 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11</a></li>
 </ul>
 
+After downloading a release you can extract it anywhere in your
+filesystem, preferable to `/opt/toolchains/or1k-elf/`. You need to add
+the toolchain to your path:
 
-<h4>Development builds</h4>
-
-<p>There are continuous builds from the current <b>upstream</b>
-versions of binutils, gdb and newlib along with the OpenRISC gcc port.
-They are automatically executed after source code changes and their
-results are automatically
-uploaded <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/upstream/">here</a>.
-
-<p>For each build, the txt file describes the git revisions used in that
-build and the successfully built, but untested, toolchains are
-available for different operating systems.</p>
-
-<p>Current upstream build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_upstream_multicore_build"/></a></p>
-
-<p>Direct links to the latest build:</p>
-
-<ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-multicore-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-multicore-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-multicore-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-multicore-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
-</ul>
-
-<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
-² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
-
-<p>Beside this we continuously build from changes in the OpenRISC development repositories. Current development build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_dev_multicore_build"/></a></p>
-
-<ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-multicore-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-multicore-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-multicore-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-multicore-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
-</ul>
-
-<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
-² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
+<pre><code>export PATH=/opt/toolchains/or1k-elf/bin:${PATH}
+</code></pre>
 
       </section>
       <footer>

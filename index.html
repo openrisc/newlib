@@ -99,53 +99,23 @@ some basic examples is also available</p>
 <p>You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
 different components that need to be installed
-to <tt>/opt/or1k-elf</tt>. You can find all releases <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release">here</a>. The latest release (newlib 2.20+or1k fixes, binutils 2.20, gcc 4.9):</p>
-
+to <tt>/opt/toolchains/or1k-elf</tt>. You can find all
+releases <a href="https://github.com/openrisc/newlib/releases">here</a>. Those
+are current releases:</p>
+  
 <ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/release/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
+<li><a href="">GCC 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11</a></li>
 </ul>
 
 
-<h4>Development builds</h4>
+<h4>Build status</h4>
 
-<p>There are continuous builds from the current <b>upstream</b>
-versions of binutils, gdb and newlib along with the OpenRISC gcc port.
-They are automatically executed after source code changes and their
-results are automatically
-uploaded <a href="http://lis.ei.tum.de/pub-download/openrisc-builds/upstream/">here</a>.
-
-<p>For each build, the txt file describes the git revisions used in that
-build and the successfully built, but untested, toolchains are
-available for different operating systems.</p>
-
-<p>Current upstream build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_upstream_build"/></a></p>
-
-<p>Direct links to the latest build:</p>
-
-<ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/upstream/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
-</ul>
-
-<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
-² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
-
-<p>Beside this we continuously build from changes in the OpenRISC development repositories. Current development build status: <a href="http://lis.ei.tum.de/jenkins/"><img src="http://lis.ei.tum.de/jenkins/buildStatus/icon?job=openrisc_newlib_toolchain_dev_build"/></a></p>
-
-<ul>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-14.04-amd64.tgz">For Ubuntu 14.04 (amd64)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-12.04-amd64.tgz">For Ubuntu 12.04 (amd64)²</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-14.04-i386.tgz">For Ubuntu 14.04 (i386)¹</a></li>
-<li><a href="http://lis.ei.tum.de/pub-download/openrisc-builds/or1k-elf/dev/or1k-elf-latest-ubuntu-12.04-i386.tgz">For Ubuntu 12.04 (i386)²</a></li>
-</ul>
-
-<p>¹ or any other distro with libgmp10, libmpc3 and libmpfr4 (feedback welcome)<br/>
-² or any other distro with libgmp10, libmpc2 and libmpfr4 (feedback welcome)</p>
+<p>Whenever something is pushed to the newlib repository, the current
+development versions of Binutils, GCC, (or1k) Newlib and GDB are
+automatically build at [Travis
+CI](https://travis-ci.org/openrisc/binutils-gdb). Current build
+status: [![Build
+Status](https://travis-ci.org/openrisc/binutils-gdb.svg?branch=or1k)](https://travis-ci.org/openrisc/binutils-gdb)</p>
 
       </section>
       <footer>

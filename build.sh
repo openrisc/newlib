@@ -42,7 +42,7 @@ rm -rf build-*
 # Build!
 echo "++ build binutils"
 mkdir build-binutils; cd build-binutils
-../binutils/configure --target=or1k-elf --prefix=$PREFIX --enable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
+../binutils/configure --target=or1k-elf --prefix=$PREFIX --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-gdb --with-sysroot --disable-newlib --disable-libgloss --with-system-zlib
 make
 make install
 cd ..

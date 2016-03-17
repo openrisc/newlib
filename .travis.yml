@@ -19,6 +19,7 @@ addons:
 env:
   global:
    - NEWLIB_CHECKOUT=$TRAVIS_BUILD_DIR
+   - LOG_REDIRECT=build.log
   matrix:
    - PREFIX=/tmp/or1k-elf
    - PREFIX=/tmp/or1k-elf BUILD_MULTICORE=1

@@ -93,6 +93,24 @@ release by checkout of the respective git tag. Once the repositories
 are in your temporary compilation repository, you need to execute the
 following sequence to build the entire toolchain.</p>
 
+<p><i>Note:</i> In case you want to copy the toolchain to other
+computers with a different distribution or want to build a release
+version, it is preferable not to dynamically link gcc against the
+installed versions of `libgmp`, `libmpfr` and `libmpc`. Instead you
+then extract the sources of the libraries into the gcc source
+tree. The build when then pick those sources up and compile them into
+gcc. For example:</p>
+
+<pre><code>wget https://gmplib.org/download/gmp/gmp-6.1.0.tar.xz
+tar -xf gmp-6.1.0.tar.xz
+ln -s ../gmp-6.1.0 gcc/gmp
+wget ftp://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz
+tar -xzf mpc-1.0.3.tar.gz
+ln -s ../mpc-1.0.3 gcc/mpc
+wget http://www.mpfr.org/mpfr-current/mpfr-3.1.4.tar.xz
+tar -xf mpfr-3.1.4.tar.xz
+ln -s ../mpfr-3.1.4 gcc/mpfr</code></pre>
+
 <h3>Build binutils</h3>
 
 <p>The GNU binutils contain the assembler, linker, <tt>objdump</tt>

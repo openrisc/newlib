@@ -102,13 +102,16 @@ releases <a href="https://github.com/openrisc/newlib/releases">here</a>. Those
 are current releases:</p>
   
 <ul>
-<li><a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf_gcc4.9.2_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC
+<li><a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf_gcc4.9.3_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC
 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB
+7.11</a></li>
+<li><a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf_gcc5.2.0_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC
+5.2.0, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB
 7.11</a></li>
 </ul>
 
 After downloading a release you can extract it anywhere in your
-filesystem, preferable to `/opt/toolchains/or1k-elf/`. You need to add
+filesystem, we recommend to `/opt/toolchains/or1k-elf/`. You need to add
 the toolchain to your path:
 
 <pre><code>export PATH=/opt/toolchains/or1k-elf/bin:${PATH}
@@ -118,10 +121,11 @@ the toolchain to your path:
 
 <p>Whenever something is pushed to the newlib repository, the current
 development versions of Binutils, GCC, (or1k) Newlib and GDB are
-automatically build at [Travis
-CI](https://travis-ci.org/openrisc/binutils-gdb). Current build
-status: [![Build
-Status](https://travis-ci.org/openrisc/binutils-gdb.svg?branch=or1k)](https://travis-ci.org/openrisc/binutils-gdb)</p>
+automatically build
+at <a href="https://travis-ci.org/openrisc/newlib">Travis CI</a>.</p>
+
+<p>Current build
+status: <a href="https://travis-ci.org/openrisc/newlib"><img src="https://travis-ci.org/openrisc/newlib.svg?branch=or1k"></a></p>
 
       </section>
       <footer>

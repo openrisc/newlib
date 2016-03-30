@@ -11,6 +11,12 @@ details. */
 
 #ifndef _MISCFUNCS_H
 #define _MISCFUNCS_H
+
+#define likely(X) __builtin_expect (!!(X), 1)
+#define unlikely(X) __builtin_expect (!!(X), 0)
+
+extern "C" int getentropy (void *ptr, size_t len);
+
 int __reg1 winprio_to_nice (DWORD);
 DWORD __reg1 nice_to_winprio (int &);
 
@@ -69,6 +75,11 @@ int __reg2 check_invalid_virtual_addr (const void *s, unsigned sz);
 ssize_t __reg3 check_iovec (const struct iovec *, int, bool);
 #define check_iovec_for_read(a, b) check_iovec ((a), (b), false)
 #define check_iovec_for_write(a, b) check_iovec ((a), (b), true)
+
+#ifdef __x86_64__
+extern PVOID create_new_main_thread_stack (PVOID &allocationbase,
+					   SIZE_T parent_commitsize);
+#endif
 
 extern "C" DWORD WINAPI pthread_wrapper (PVOID arg);
 extern "C" HANDLE WINAPI CygwinCreateThread (LPTHREAD_START_ROUTINE thread_func,

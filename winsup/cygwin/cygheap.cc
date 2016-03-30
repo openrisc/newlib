@@ -219,12 +219,6 @@ init_cygheap::init_installation_root ()
 				    installation_root)))
 	break;
     }
-
-  if (cygwin_props.disable_key)
-    {
-      installation_key.Length = 0;
-      installation_key.Buffer[0] = L'\0';
-    }
 }
 
 void __stdcall
@@ -743,4 +737,16 @@ init_cygheap::find_tls (int sig, bool& issig_wait)
   if (t)
     WaitForSingleObject (t->mutex, INFINITE);
   return t;
+}
+
+/* Called from profil.c to sample all non-main thread PC values for profiling */
+extern "C" void
+cygheap_profthr_all (void (*profthr_byhandle) (HANDLE))
+{
+  for (uint32_t ix = 0; ix < nthreads; ix++)
+    {
+      _cygtls *tls = cygheap->threadlist[ix].thread;
+      if (tls->tid)
+	profthr_byhandle (tls->tid->win32_obj_id);
+    }
 }

@@ -24,9 +24,7 @@ details. */
 #ifdef __x86_64__
 /* 2014-04-24: Current Mingw headers define sockaddr_in6 using u_long (8 byte)
    because a redefinition for LP64 systems is missing.  This leads to a wrong
-   definition and size of sockaddr_in6 when building with winsock headers.
-   This definition is also required to use the right u_long type in subsequent
-   function calls. */
+   definition and size of sockaddr_in6 when building with winsock headers. */
 #undef u_long
 #define u_long __ms_u_long
 #endif
@@ -1183,7 +1181,7 @@ cygwin_gethostbyaddr (const char *addr, int len, int type)
 }
 
 static void
-memcpy4to6 (char *dst, const u_char *src)
+memcpy4to6 (char *dst, const u_int8_t *src)
 {
   const unsigned int h[] = {0, 0, htonl (0xFFFF)};
   memcpy (dst, h, 12);
@@ -1206,7 +1204,7 @@ gethostby_specials (const char *name, const int af,
     }
 
   int res;
-  u_char address[NS_IN6ADDRSZ];
+  u_int8_t address[NS_IN6ADDRSZ];
   /* Test for numerical addresses */
   res = cygwin_inet_pton(af, name, address);
   /* Test for special domain names */
@@ -1295,7 +1293,7 @@ gethostby_helper (const char *name, const int af, const int type,
   /* Get the data from the name server */
   const int maxcount = 3;
   int old_errno, ancount = 0, anlen = 1024, msgsize = 0;
-  u_char *ptr, *msg = NULL;
+  unsigned char *ptr, *msg = NULL;
   int sz;
   hostent *ret;
   char *string_ptr;
@@ -1303,7 +1301,7 @@ gethostby_helper (const char *name, const int af, const int type,
   while ((anlen > msgsize) && (ancount++ < maxcount))
     {
       msgsize = anlen;
-      ptr = (u_char *) realloc (msg, msgsize);
+      ptr = (unsigned char *) realloc (msg, msgsize);
       if (ptr == NULL )
 	{
 	  old_errno = errno;
@@ -1329,7 +1327,7 @@ gethostby_helper (const char *name, const int af, const int type,
       set_errno (old_errno);
       return NULL;
     }
-  u_char *eomsg = msg + anlen - 1;
+  unsigned char *eomsg = msg + anlen - 1;
 
   /* We scan the answer records to determine the required memory size.
      They can be corrupted and we don't fully trust that the message
@@ -1349,10 +1347,11 @@ gethostby_helper (const char *name, const int af, const int type,
     unsigned namelen1: 16;      // expanded length (with final 0)
     unsigned next_o: 16;        // offset to next valid
     unsigned size: 16;          // data size
-    u_char data[];              // data
+    unsigned char data[];       // data
     record * next () { return (record *) (((char *) this) + next_o); }
     void set_next ( record * nxt) { next_o = ((char *) nxt) - ((char *) this); }
-    u_char * name () { return (u_char *) (((char *) this) - complen); }
+    unsigned char *name () { return (unsigned char *)
+				    (((char *) this) - complen); }
   };
 
   record * anptr = NULL, * prevptr = NULL, * curptr;
@@ -1913,21 +1912,7 @@ get_adapters_addresses (PIP_ADAPTER_ADDRESSES *pa_ret, ULONG family)
   return ret == ERROR_SUCCESS || (!pa_ret && ret == ERROR_BUFFER_OVERFLOW);
 }
 
-#define WS_IFF_UP	     1
-#define WS_IFF_BROADCAST     2
-#define WS_IFF_LOOPBACK	     4
-#define WS_IFF_POINTTOPOINT  8
-#define WS_IFF_MULTICAST    16
-
-static inline short
-convert_ifr_flags (u_long ws_flags)
-{
-  return (ws_flags & (WS_IFF_UP | WS_IFF_BROADCAST))
-	 | ((ws_flags & (WS_IFF_LOOPBACK | WS_IFF_POINTTOPOINT)) << 1)
-	 | ((ws_flags & WS_IFF_MULTICAST) << 8);
-}
-
-static u_long
+static in_addr_t
 get_routedst (DWORD if_index)
 {
   PMIB_IPFORWARDTABLE pift;
@@ -1950,11 +1935,7 @@ struct ifall {
   struct sockaddr_storage ifa_addr;
   struct sockaddr_storage ifa_brddstaddr;
   struct sockaddr_storage ifa_netmask;
-  struct sockaddr         ifa_hwaddr;
-  int                     ifa_metric;
-  int                     ifa_mtu;
-  int                     ifa_ifindex;
-  struct ifreq_frndlyname ifa_frndlyname;
+  struct ifaddrs_hwdata   ifa_hwdata;
 };
 
 static unsigned int
@@ -2104,10 +2085,10 @@ static void
 get_friendlyname (struct ifall *ifp, PIP_ADAPTER_ADDRESSES pap)
 {
   struct ifreq_frndlyname *iff = (struct ifreq_frndlyname *)
-				 &ifp->ifa_frndlyname;
+				 &ifp->ifa_hwdata.ifa_frndlyname;
   iff->ifrf_len = sys_wcstombs (iff->ifrf_friendlyname,
 				IFRF_FRIENDLYNAMESIZ,
-				pap->FriendlyName);
+				pap->FriendlyName) + 1;
 }
 
 static void
@@ -2115,9 +2096,9 @@ get_hwaddr (struct ifall *ifp, PIP_ADAPTER_ADDRESSES pap)
 {
   for (UINT i = 0; i < IFHWADDRLEN; ++i)
     if (i >= pap->PhysicalAddressLength)
-      ifp->ifa_hwaddr.sa_data[i] = '\0';
+      ifp->ifa_hwdata.ifa_hwaddr.sa_data[i] = '\0';
     else
-      ifp->ifa_hwaddr.sa_data[i] = pap->PhysicalAddress[i];
+      ifp->ifa_hwdata.ifa_hwaddr.sa_data[i] = pap->PhysicalAddress[i];
 }
 
 /*
@@ -2233,13 +2214,15 @@ get_ifs (ULONG family)
 	    /* Hardware address */
 	    get_hwaddr (ifp, pap);
 	    /* Metric */
-	    ifp->ifa_metric = 1;
+	    ifp->ifa_hwdata.ifa_metric = 1;
 	    /* MTU */
-	    ifp->ifa_mtu = pap->Mtu;
+	    ifp->ifa_hwdata.ifa_mtu = pap->Mtu;
 	    /* Interface index */
-	    ifp->ifa_ifindex = pap->IfIndex;
+	    ifp->ifa_hwdata.ifa_ifindex = pap->IfIndex;
 	    /* Friendly name */
 	    get_friendlyname (ifp, pap);
+	    /* Let ifa_data member point to "ifaddrs_hwdata" data. */
+	    ifp->ifa_ifa.ifa_data = &ifp->ifa_hwdata;
 	    ++ifp;
 	  }
       else
@@ -2327,17 +2310,20 @@ get_ifs (ULONG family)
 	    get_hwaddr (ifp, pap);
 	    /* Metric */
 	    if (wincap.has_gaa_on_link_prefix ())
-	      ifp->ifa_metric = (sa->sa_family == AF_INET
-				? ((PIP_ADAPTER_ADDRESSES_LH) pap)->Ipv4Metric
-				: ((PIP_ADAPTER_ADDRESSES_LH) pap)->Ipv6Metric);
+	      ifp->ifa_hwdata.ifa_metric
+		= (sa->sa_family == AF_INET)
+		  ? ((PIP_ADAPTER_ADDRESSES_LH) pap)->Ipv4Metric
+		  : ((PIP_ADAPTER_ADDRESSES_LH) pap)->Ipv6Metric;
 	    else
-	      ifp->ifa_metric = 1;
+	      ifp->ifa_hwdata.ifa_metric = 1;
 	    /* MTU */
-	    ifp->ifa_mtu = pap->Mtu;
+	    ifp->ifa_hwdata.ifa_mtu = pap->Mtu;
 	    /* Interface index */
-	    ifp->ifa_ifindex = pap->IfIndex;
+	    ifp->ifa_hwdata.ifa_ifindex = pap->IfIndex;
 	    /* Friendly name */
 	    get_friendlyname (ifp, pap);
+	    /* Let ifa_data member point to "ifaddrs_hwdata" data. */
+	    ifp->ifa_ifa.ifa_data = &ifp->ifa_hwdata;
 	    ++ifp;
 #         undef sin
 #         undef sin6
@@ -2432,20 +2418,20 @@ get_ifconf (struct ifconf *ifc, int what)
 		}
 	      break;
 	    case SIOCGIFHWADDR:
-	      memcpy (&ifr->ifr_hwaddr, &ifp->ifa_hwaddr,
+	      memcpy (&ifr->ifr_hwaddr, &ifp->ifa_hwdata.ifa_hwaddr,
 		      sizeof ifr->ifr_hwaddr);
 	      break;
 	    case SIOCGIFMETRIC:
-	      ifr->ifr_metric = ifp->ifa_metric;
+	      ifr->ifr_metric = ifp->ifa_hwdata.ifa_metric;
 	      break;
 	    case SIOCGIFMTU:
-	      ifr->ifr_mtu = ifp->ifa_mtu;
+	      ifr->ifr_mtu = ifp->ifa_hwdata.ifa_mtu;
 	      break;
 	    case SIOCGIFINDEX:
-	      ifr->ifr_ifindex = ifp->ifa_ifindex;
+	      ifr->ifr_ifindex = ifp->ifa_hwdata.ifa_ifindex;
 	      break;
 	    case SIOCGIFFRNDLYNAM:
-	      memcpy (ifr->ifr_frndlyname, &ifp->ifa_frndlyname,
+	      memcpy (ifr->ifr_frndlyname, &ifp->ifa_hwdata.ifa_frndlyname,
 		      sizeof (struct ifreq_frndlyname));
 	    }
 	  if ((caddr_t) ++ifr >
@@ -2984,11 +2970,11 @@ cygwin_sendmsg (int fd, const struct msghdr *msg, int flags)
  *	Paul Vixie, 1996.
  */
 static int
-inet_pton4 (const char *src, u_char *dst)
+inet_pton4 (const char *src, u_int8_t *dst)
 {
   static const char digits[] = "0123456789";
   int saw_digit, octets, ch;
-  u_char tmp[INADDRSZ], *tp;
+  u_int8_t tmp[INADDRSZ], *tp;
 
   saw_digit = 0;
   octets = 0;
@@ -2999,7 +2985,7 @@ inet_pton4 (const char *src, u_char *dst)
 
       if ((pch = strchr(digits, ch)) != NULL)
 	{
-	  u_int ret = *tp * 10 + (pch - digits);
+	  u_int32_t ret = *tp * 10 + (pch - digits);
 
 	  if (ret > 255)
 	    return (0);
@@ -3042,14 +3028,14 @@ inet_pton4 (const char *src, u_char *dst)
  *	Paul Vixie, 1996.
  */
 static int
-inet_pton6 (const char *src, u_char *dst)
+inet_pton6 (const char *src, u_int8_t *dst)
 {
   static const char xdigits_l[] = "0123456789abcdef",
 		    xdigits_u[] = "0123456789ABCDEF";
-  u_char tmp[IN6ADDRSZ], *tp, *endp, *colonp;
+  u_int8_t tmp[IN6ADDRSZ], *tp, *endp, *colonp;
   const char *xdigits, *curtok;
   int ch, saw_xdigit;
-  u_int val;
+  u_int32_t val;
 
   memset((tp = tmp), 0, IN6ADDRSZ);
   endp = tp + IN6ADDRSZ;
@@ -3088,8 +3074,8 @@ inet_pton6 (const char *src, u_char *dst)
 	    }
 	  if (tp + INT16SZ > endp)
 	    return (0);
-	  *tp++ = (u_char) (val >> 8) & 0xff;
-	  *tp++ = (u_char) val & 0xff;
+	  *tp++ = (u_int8_t) (val >> 8) & 0xff;
+	  *tp++ = (u_int8_t) val & 0xff;
 	  saw_xdigit = 0;
 	  val = 0;
 	  continue;
@@ -3106,8 +3092,8 @@ inet_pton6 (const char *src, u_char *dst)
     {
       if (tp + INT16SZ > endp)
 	return (0);
-      *tp++ = (u_char) (val >> 8) & 0xff;
-      *tp++ = (u_char) val & 0xff;
+      *tp++ = (u_int8_t) (val >> 8) & 0xff;
+      *tp++ = (u_int8_t) val & 0xff;
     }
   if (colonp != NULL)
     {
@@ -3149,9 +3135,9 @@ cygwin_inet_pton (int af, const char *src, void *dst)
   switch (af)
     {
     case AF_INET:
-      return (inet_pton4(src, (u_char *) dst));
+      return (inet_pton4(src, (u_int8_t *) dst));
     case AF_INET6:
-      return (inet_pton6(src, (u_char *) dst));
+      return (inet_pton6(src, (u_int8_t *) dst));
     default:
       errno = EAFNOSUPPORT;
       return (-1);
@@ -3166,12 +3152,12 @@ cygwin_inet_pton (int af, const char *src, void *dst)
  *	`dst' (as a const)
  * notes:
  *	(1) uses no statics
- *	(2) takes a u_char* not an in_addr as input
+ *	(2) takes a u_int8_t* not an in_addr as input
  * author:
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop4 (const u_char *src, char *dst, size_t size)
+inet_ntop4 (const u_int8_t *src, char *dst, size_t size)
 {
   static const char fmt[] = "%u.%u.%u.%u";
   char tmp[sizeof "255.255.255.255"];
@@ -3193,7 +3179,7 @@ inet_ntop4 (const u_char *src, char *dst, size_t size)
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop6 (const u_char *src, char *dst, size_t size)
+inet_ntop6 (const u_int8_t *src, char *dst, size_t size)
 {
   /*
    * Note that int32_t and int16_t need only be "at least" large enough
@@ -3204,7 +3190,7 @@ inet_ntop6 (const u_char *src, char *dst, size_t size)
    */
   char tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"], *tp;
   struct { int base, len; } best, cur;
-  u_int words[IN6ADDRSZ / INT16SZ];
+  u_int32_t words[IN6ADDRSZ / INT16SZ];
   int i;
 
   /*
@@ -3310,9 +3296,9 @@ cygwin_inet_ntop (int af, const void *src, char *dst, socklen_t size)
   switch (af)
     {
     case AF_INET:
-      return (inet_ntop4((const u_char *) src, dst, size));
+      return (inet_ntop4((const u_int8_t *) src, dst, size));
     case AF_INET6:
-      return (inet_ntop6((const u_char *) src, dst, size));
+      return (inet_ntop6((const u_int8_t *) src, dst, size));
     default:
       errno = EAFNOSUPPORT;
       return (NULL);
@@ -3594,7 +3580,16 @@ cygwin_getaddrinfo (const char *hostname, const char *servname,
 	}
       /* Disable automatic IDN conversion on W8 and later. */
       whints.ai_flags |= AI_DISABLE_IDN_ENCODING;
-      ret = w32_to_gai_err (GetAddrInfoW (whost, wserv, &whints, &wres));
+      ret = GetAddrInfoW (whost, wserv, &whints, &wres);
+      /* Try to workaround an apparent shortcoming in Winsock's getaddrinfo
+	 implementation.  See this link for details:
+	 https://communities.vmware.com/message/2577858#2577858 */
+      if (ret == WSANO_RECOVERY && (whints.ai_flags & AI_ALL))
+	{
+	  whints.ai_flags &= ~AI_ALL;
+	  ret = GetAddrInfoW (whost, wserv, &whints, &wres);
+	}
+      ret = w32_to_gai_err (ret);
       /* Always copy over to self-allocated memory. */
       if (!ret)
 	{

@@ -1,7 +1,7 @@
 /* mount.h: mount definitions.
 
    Copyright 1996, 1997, 1998, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
-   2008, 2009, 2010, 2011, 2012, 2013, 2014 Red Hat, Inc.
+   2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015 Red Hat, Inc.
 
 This file is part of Cygwin.
 
@@ -11,6 +11,10 @@ details. */
 
 #ifndef _MOUNT_H
 #define _MOUNT_H
+
+#define __CCP_APP_SLASH	0x10000000	/* Internal flag for conv_to_posix_path.
+					   always append slash, even if path
+					   is "X:\\" only. */
 
 enum disk_type
 {
@@ -45,6 +49,7 @@ enum fs_info_type
   nwfs,
   ncfsd,
   afs,
+  prlfs,
   /* Always last. */
   max_fs_type
 };
@@ -116,6 +121,7 @@ class fs_info
   IMPLEMENT_FS_FLAG (nwfs)
   IMPLEMENT_FS_FLAG (ncfsd)
   IMPLEMENT_FS_FLAG (afs)
+  IMPLEMENT_FS_FLAG (prlfs)
   fs_info_type what_fs () const { return status.fs_type; }
   bool got_fs () const { return status.fs_type != none; }
 
@@ -191,16 +197,15 @@ class mount_info
   unsigned set_flags_from_win32_path (const char *path);
   int conv_to_win32_path (const char *src_path, char *dst, device&,
 			  unsigned *flags = NULL);
-  int conv_to_posix_path (PWCHAR src_path, char *posix_path,
-			  int keep_rel_p);
+  int conv_to_posix_path (PWCHAR src_path, char *posix_path, int ccp_flags);
   int conv_to_posix_path (const char *src_path, char *posix_path,
-			  int keep_rel_p);
+			  int ccp_flags);
   struct mntent *getmntent (int x);
 
   int write_cygdrive_info (const char *cygdrive_prefix, unsigned flags);
   int get_cygdrive_info (char *user, char *system, char* user_flags,
 			 char* system_flags);
-  void cygdrive_posix_path (const char *src, char *dst, int trailing_slash_p);
+  void cygdrive_posix_path (const char *src, char *dst, int flags);
   int get_mounts_here (const char *parent_dir, int,
 		       PUNICODE_STRING mount_points,
 		       PUNICODE_STRING cygd);

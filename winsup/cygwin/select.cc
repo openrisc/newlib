@@ -77,8 +77,6 @@ details. */
   (fd_set *) __res; \
 })
 
-#define copyfd_set(to, from, n) memcpy (to, from, sizeof_fd_set (n));
-
 #define set_handle_or_return_if_not_open(h, s) \
   h = (s)->fh->get_io_handle_cyg (); \
   if (cygheap->fdtab.not_open ((s)->fd)) \
@@ -131,9 +129,11 @@ static int
 select (int maxfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	DWORD ms)
 {
-  int res = select_stuff::select_loop;
+  select_stuff::wait_states wait_state = select_stuff::select_loop;
+  int ret = 0;
 
-  LONGLONG start_time = gtod.msecs ();	/* Record the current time for later use. */
+  /* Record the current time for later use. */
+  LONGLONG start_time = gtod.msecs ();
 
   select_stuff sel;
   sel.return_on_signal = 0;
@@ -143,7 +143,7 @@ select (int maxfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
   fd_set *w = allocfd_set (maxfds);
   fd_set *e = allocfd_set (maxfds);
 
-  while (res == select_stuff::select_loop)
+  do
     {
       /* Build the select record per fd linked list and set state as
 	 needed. */
@@ -167,47 +167,61 @@ select (int maxfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	       call_signal_handler().  */
 	    _my_tls.call_signal_handler ();
 	    set_sig_errno (EINTR);
-	    res = select_stuff::select_signalled;
+	    wait_state = select_stuff::select_signalled;
 	    break;
 	  case WAIT_CANCELED:
 	    sel.destroy ();
 	    pthread::static_cancel_self ();
 	    /*NOTREACHED*/
 	  default:
-	    res = select_stuff::select_set_zero;	/* Set res to zero below. */
+	    /* Set wait_state to zero below. */
+	    wait_state = select_stuff::select_set_zero;
 	    break;
 	  }
       else if (sel.always_ready || ms == 0)
-	res = 0;					/* Catch any active fds via
-							   sel.poll() below */
+	/* Catch any active fds via sel.poll() below */
+	wait_state = select_stuff::select_ok;
       else
-	res = sel.wait (r, w, e, ms);			/* wait for an fd to become
-							   become active or time out */
-      select_printf ("res %d", res);
-      if (res >= 0)
+	/* wait for an fd to become active or time out */
+	wait_state = sel.wait (r, w, e, ms);
+
+      select_printf ("sel.wait returns %d", wait_state);
+
+      if (wait_state >= select_stuff::select_ok)
 	{
-	  copyfd_set (readfds, r, maxfds);
-	  copyfd_set (writefds, w, maxfds);
-	  copyfd_set (exceptfds, e, maxfds);
-	  if (res == select_stuff::select_set_zero)
-	    res = 0;
+	  UNIX_FD_ZERO (readfds, maxfds);
+	  UNIX_FD_ZERO (writefds, maxfds);
+	  UNIX_FD_ZERO (exceptfds, maxfds);
+	  if (wait_state == select_stuff::select_set_zero)
+	    ret = 0;
 	  else
-	    /* Set the bit mask from sel records */
-	    res = sel.poll (readfds, writefds, exceptfds) ?: select_stuff::select_loop;
+	    {
+	      /* Set bit mask from sel records.  This also sets ret to the
+		 right value >= 0, matching the number of bits set in the
+		 fds records.  if ret is 0, continue to loop. */
+	      ret = sel.poll (readfds, writefds, exceptfds);
+	      if (!ret)
+		wait_state = select_stuff::select_loop;
+	    }
 	}
       /* Always clean up everything here.  If we're looping then build it
 	 all up again.  */
       sel.cleanup ();
       sel.destroy ();
-      /* Recalculate the time remaining to wait if we are going to be looping. */
-      if (res == select_stuff::select_loop && ms != INFINITE)
+      /* Recalculate time remaining to wait if we are going to be looping. */
+      if (wait_state == select_stuff::select_loop && ms != INFINITE)
 	{
 	  select_printf ("recalculating ms");
 	  LONGLONG now = gtod.msecs ();
 	  if (now > (start_time + ms))
 	    {
 	      select_printf ("timed out after verification");
-	      res = 0;
+	      /* Set descriptor bits to zero per POSIX. */
+	      UNIX_FD_ZERO (readfds, maxfds);
+	      UNIX_FD_ZERO (writefds, maxfds);
+	      UNIX_FD_ZERO (exceptfds, maxfds);
+	      wait_state = select_stuff::select_ok;
+	      ret = 0;
 	    }
 	  else
 	    {
@@ -217,10 +231,11 @@ select (int maxfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	    }
 	}
     }
+  while (wait_state == select_stuff::select_loop);
 
-  if (res < -1)
-    res = -1;
-  return res;
+  if (wait_state < select_stuff::select_ok)
+    ret = -1;
+  return ret;
 }
 
 extern "C" int
@@ -353,7 +368,7 @@ select_stuff::wait (fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
   select_record *s = &start;
   DWORD m = 0;
 
-  set_signal_arrived here (w4[m++]);
+  wait_signal_arrived here (w4[m++]);
   if ((w4[m] = pthread::get_cancel_event ()) != NULL)
     m++;
 
@@ -436,10 +451,10 @@ next_while:;
     default:
       s = &start;
       bool gotone = false;
-      /* Some types of objects (e.g., consoles) wake up on "inappropriate" events
-	 like mouse movements.  The verify function will detect these situations.
-	 If it returns false, then this wakeup was a false alarm and we should go
-	 back to waiting. */
+      /* Some types of objects (e.g., consoles) wake up on "inappropriate"
+	 events like mouse movements.  The verify function will detect these
+	 situations.  If it returns false, then this wakeup was a false alarm
+	 and we should go back to waiting. */
       while ((s = s->next))
 	if (s->saw_error ())
 	  {
@@ -824,11 +839,16 @@ fhandler_fifo::select_except (select_stuff *ss)
 static int
 peek_console (select_record *me, bool)
 {
-  extern const char * get_nonascii_key (INPUT_RECORD& input_rec, char *);
   fhandler_console *fh = (fhandler_console *) me->fh;
 
   if (!me->read_selected)
     return me->write_ready;
+
+  if (fh->get_cons_readahead_valid ())
+    {
+      select_printf ("cons_readahead");
+      return me->read_ready = true;
+    }
 
   if (fh->get_readahead_valid ())
     {
@@ -860,7 +880,7 @@ peek_console (select_record *me, bool)
 	  {
 	    if (irec.Event.KeyEvent.bKeyDown
 		&& (irec.Event.KeyEvent.uChar.AsciiChar
-		    || get_nonascii_key (irec, tmpbuf)))
+		    || fhandler_console::get_nonascii_key (irec, tmpbuf)))
 	      return me->read_ready = true;
 	  }
 	else
@@ -901,7 +921,7 @@ fhandler_console::select_read (select_stuff *ss)
   s->peek = peek_console;
   s->h = get_handle ();
   s->read_selected = true;
-  s->read_ready = false;
+  s->read_ready = get_readahead_valid();
   return s;
 }
 
@@ -1630,6 +1650,7 @@ peek_mailslot (select_record *me, bool)
   DWORD msgcnt = 0;
   if (!GetMailslotInfo (h, NULL, NULL, &msgcnt, NULL))
     {
+      me->except_ready = true;
       select_printf ("mailslot %d(%p) error %E", me->fd, h);
       return 1;
     }

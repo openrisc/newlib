@@ -462,7 +462,7 @@ _pinfo::set_ctty (fhandler_termios *fh, int flags)
 {
   tty_min& tc = *fh->tc ();
   debug_printf ("old %s, ctty device number %y, tc.ntty device number %y flags & O_NOCTTY %y", __ctty (), ctty, tc.ntty, flags & O_NOCTTY);
-  if (fh && &tc && (ctty <= 0 || ctty == tc.ntty) && !(flags & O_NOCTTY))
+  if (fh && (ctty <= 0 || ctty == tc.ntty) && !(flags & O_NOCTTY))
     {
       ctty = tc.ntty;
       if (cygheap->ctty != fh->archetype)
@@ -622,11 +622,11 @@ commune_process (void *arg)
     case PICOM_PIPE_FHANDLER:
       {
 	sigproc_printf ("processing PICOM_FDS");
-	HANDLE hdl = si._si_commune._si_pipe_fhandler;
+	int64_t unique_id = si._si_commune._si_pipe_unique_id;
 	unsigned int n = 0;
 	cygheap_fdenum cfd;
 	while (cfd.next () >= 0)
-	  if (cfd->get_handle () == hdl)
+	  if (cfd->get_unique_id () == unique_id)
 	    {
 	      fhandler_pipe *fh = cfd;
 	      n = sizeof *fh;
@@ -701,7 +701,7 @@ _pinfo::commune_request (__uint32_t code, ...)
   switch (code)
     {
     case PICOM_PIPE_FHANDLER:
-      si._si_commune._si_pipe_fhandler = va_arg (args, HANDLE);
+      si._si_commune._si_pipe_unique_id = va_arg (args, int64_t);
       break;
 
     case PICOM_FD:
@@ -781,13 +781,13 @@ out:
 }
 
 fhandler_pipe *
-_pinfo::pipe_fhandler (HANDLE hdl, size_t &n)
+_pinfo::pipe_fhandler (int64_t unique_id, size_t &n)
 {
   if (!this || !pid)
     return NULL;
   if (pid == myself->pid)
     return NULL;
-  commune_result cr = commune_request (PICOM_PIPE_FHANDLER, hdl);
+  commune_result cr = commune_request (PICOM_PIPE_FHANDLER, unique_id);
   n = cr.n;
   return (fhandler_pipe *) cr.s;
 }
@@ -1391,14 +1391,13 @@ winpids::enum_processes (bool winpid)
 	}
 
       PSYSTEM_PROCESS_INFORMATION px = procs;
-      char *&pxc = (char *&)px;
       while (1)
 	{
 	  if (px->UniqueProcessId)
 	    add (nelem, true, (DWORD) (uintptr_t) px->UniqueProcessId);
 	  if (!px->NextEntryOffset)
 	    break;
-	  pxc += px->NextEntryOffset;
+          px = (PSYSTEM_PROCESS_INFORMATION) ((char *) px + px->NextEntryOffset);
 	}
     }
   return nelem;

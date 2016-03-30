@@ -42,7 +42,7 @@ munge_threadfunc ()
   if (!threadfunc_ix[0])
     {
       char **peb;
-      char **top = (char **) _tlsbase;
+      char **top = (char **) NtCurrentTeb()->Tib.StackBase;
       for (peb = ebp, i = 0; peb < top && i < 7; peb++)
 	if (*peb == search_for)
 	  threadfunc_ix[i++] = peb - ebp;
@@ -55,12 +55,22 @@ munge_threadfunc ()
 
   if (threadfunc_ix[0])
     {
-      char *threadfunc = ebp[threadfunc_ix[0]];
+      char *threadfunc = NULL;
+
+      /* This call to NtQueryInformationThread crashes under WOW64 on
+         64 bit XP and Server 2003. */
+      if (wincap.wow64_has_secondary_stack ())
+	threadfunc = ebp[threadfunc_ix[0]];
+      else
+	NtQueryInformationThread (NtCurrentThread (),
+				  ThreadQuerySetWin32StartAddress,
+				  &threadfunc, sizeof threadfunc, NULL);
       if (!search_for || threadfunc == search_for)
 	{
 	  search_for = NULL;
 	  for (i = 0; threadfunc_ix[i]; i++)
-	    ebp[threadfunc_ix[i]] = (char *) threadfunc_fe;
+	    if (!threadfunc || ebp[threadfunc_ix[i]] == threadfunc)
+	       ebp[threadfunc_ix[i]] = (char *) threadfunc_fe;
 	  TlsSetValue (_my_oldfunc, threadfunc);
 	}
     }

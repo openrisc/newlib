@@ -17,7 +17,6 @@ details. */
 #include <stdarg.h>
 #include <syslog.h>
 #include <wchar.h>
-#include <ucontext.h>
 
 #include "cygtls.h"
 #include "pinfo.h"
@@ -47,8 +46,8 @@ details. */
 #define CALL_HANDLER_RETRY_INNER 10
 
 PWCHAR debugger_command;
-extern u_char _sigbe;
-extern u_char _sigdelayed_end;
+extern uint8_t _sigbe;
+extern uint8_t _sigdelayed_end;
 
 static BOOL WINAPI ctrl_c_handler (DWORD);
 
@@ -638,7 +637,7 @@ EXCEPTION_DISPOSITION
 exception::handle (EXCEPTION_RECORD *e, exception_list *frame, CONTEXT *in,
 		   PDISPATCHER_CONTEXT dispatch)
 {
-  static bool NO_COPY debugging;
+  static int NO_COPY debugging = 0;
   _cygtls& me = _my_tls;
 
 #ifndef __x86_64__
@@ -809,7 +808,7 @@ exception::handle (EXCEPTION_RECORD *e, exception_list *frame, CONTEXT *in,
     rtl_unwind (frame, e);
   else
     {
-      debugging = true;
+      debugging = 1;
       return ExceptionContinueExecution;
     }
 
@@ -973,7 +972,7 @@ _cygtls::interrupt_setup (siginfo_t& si, void *handler, struct sigaction& siga)
   this->sig = si.si_signo; /* Should always be last thing set to avoid race */
 
   if (incyg)
-    SetEvent (get_signal_arrived (false));
+    set_signal_arrived ();
 
   if (!have_execed)
     proc_subproc (PROC_CLEARWAIT, 1);
@@ -1405,7 +1404,7 @@ _cygtls::handle_SIGCONT ()
     else
       {
 	sig = SIGCONT;
-	SetEvent (signal_arrived); /* alert sig_handle_tty_stop */
+	set_signal_arrived (); /* alert sig_handle_tty_stop */
 	sigsent = true;
       }
   /* Clear pending stop signals */
@@ -1476,10 +1475,7 @@ sigpacket::process ()
 	  else if (!sigismember (&tls->sigmask, si.si_signo))
 	    issig_wait = false;
 	  else
-	    {
-	      cygheap->unlock_tls (tl_entry);
-	      tls = NULL;
-	    }
+	    tls = NULL;
 	}
     }
       

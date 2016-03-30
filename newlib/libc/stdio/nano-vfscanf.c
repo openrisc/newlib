@@ -375,6 +375,7 @@ _DEFUN(__SVFSCANF_R, (rptr, fp, fmt0, ap),
 	case 'p':
 	  scan_data.flags |= POINTER;
 	case 'x':
+	case 'X':
 	  scan_data.flags |= PFXOK;
 	  scan_data.base = 16;
 	  goto number;
@@ -423,9 +424,9 @@ _DEFUN(__SVFSCANF_R, (rptr, fp, fmt0, ap),
 	  return EOF;
 
 #ifdef FLOATING_POINT
-	case 'e':
-	case 'f':
-	case 'g':
+	case 'e': case 'E':
+	case 'f': case 'F':
+	case 'g': case 'G':
 	  scan_data.code = CT_FLOAT;
 	  break;
 #endif

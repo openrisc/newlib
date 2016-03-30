@@ -73,39 +73,41 @@ ARFLAGS = cru
 lib_a_AR = $(AR) $(ARFLAGS)
 lib_a_LIBADD =
 am__objects_1 = lib_a-bcopy.$(OBJEXT) lib_a-bzero.$(OBJEXT) \
-	lib_a-index.$(OBJEXT) lib_a-memchr.$(OBJEXT) \
-	lib_a-memcmp.$(OBJEXT) lib_a-memcpy.$(OBJEXT) \
-	lib_a-memmove.$(OBJEXT) lib_a-memset.$(OBJEXT) \
-	lib_a-rindex.$(OBJEXT) lib_a-strcasecmp.$(OBJEXT) \
-	lib_a-strcat.$(OBJEXT) lib_a-strchr.$(OBJEXT) \
-	lib_a-strcmp.$(OBJEXT) lib_a-strcoll.$(OBJEXT) \
-	lib_a-strcpy.$(OBJEXT) lib_a-strcspn.$(OBJEXT) \
-	lib_a-strdup.$(OBJEXT) lib_a-strdup_r.$(OBJEXT) \
-	lib_a-strerror.$(OBJEXT) lib_a-strerror_r.$(OBJEXT) \
-	lib_a-strlcat.$(OBJEXT) lib_a-strlcpy.$(OBJEXT) \
-	lib_a-strlen.$(OBJEXT) lib_a-strlwr.$(OBJEXT) \
-	lib_a-strncasecmp.$(OBJEXT) lib_a-strncat.$(OBJEXT) \
-	lib_a-strncmp.$(OBJEXT) lib_a-strncpy.$(OBJEXT) \
-	lib_a-strnlen.$(OBJEXT) lib_a-strpbrk.$(OBJEXT) \
-	lib_a-strrchr.$(OBJEXT) lib_a-strsep.$(OBJEXT) \
-	lib_a-strsignal.$(OBJEXT) lib_a-strspn.$(OBJEXT) \
-	lib_a-strtok.$(OBJEXT) lib_a-strtok_r.$(OBJEXT) \
-	lib_a-strupr.$(OBJEXT) lib_a-strxfrm.$(OBJEXT) \
-	lib_a-strstr.$(OBJEXT) lib_a-swab.$(OBJEXT) \
-	lib_a-u_strerr.$(OBJEXT) lib_a-wcscat.$(OBJEXT) \
-	lib_a-wcschr.$(OBJEXT) lib_a-wcscmp.$(OBJEXT) \
-	lib_a-wcscoll.$(OBJEXT) lib_a-wcscpy.$(OBJEXT) \
-	lib_a-wcscspn.$(OBJEXT) lib_a-wcslcat.$(OBJEXT) \
-	lib_a-wcslcpy.$(OBJEXT) lib_a-wcslen.$(OBJEXT) \
-	lib_a-wcsncat.$(OBJEXT) lib_a-wcsncmp.$(OBJEXT) \
-	lib_a-wcsncpy.$(OBJEXT) lib_a-wcsnlen.$(OBJEXT) \
-	lib_a-wcspbrk.$(OBJEXT) lib_a-wcsrchr.$(OBJEXT) \
-	lib_a-wcsspn.$(OBJEXT) lib_a-wcsstr.$(OBJEXT) \
-	lib_a-wcstok.$(OBJEXT) lib_a-wcswidth.$(OBJEXT) \
-	lib_a-wcsxfrm.$(OBJEXT) lib_a-wcwidth.$(OBJEXT) \
-	lib_a-wmemchr.$(OBJEXT) lib_a-wmemcmp.$(OBJEXT) \
-	lib_a-wmemcpy.$(OBJEXT) lib_a-wmemmove.$(OBJEXT) \
-	lib_a-wmemset.$(OBJEXT) lib_a-xpg_strerror_r.$(OBJEXT)
+	lib_a-explicit_bzero.$(OBJEXT) lib_a-index.$(OBJEXT) \
+	lib_a-memchr.$(OBJEXT) lib_a-memcmp.$(OBJEXT) \
+	lib_a-memcpy.$(OBJEXT) lib_a-memmove.$(OBJEXT) \
+	lib_a-memset.$(OBJEXT) lib_a-rindex.$(OBJEXT) \
+	lib_a-strcasecmp.$(OBJEXT) lib_a-strcat.$(OBJEXT) \
+	lib_a-strchr.$(OBJEXT) lib_a-strcmp.$(OBJEXT) \
+	lib_a-strcoll.$(OBJEXT) lib_a-strcpy.$(OBJEXT) \
+	lib_a-strcspn.$(OBJEXT) lib_a-strdup.$(OBJEXT) \
+	lib_a-strdup_r.$(OBJEXT) lib_a-strerror.$(OBJEXT) \
+	lib_a-strerror_r.$(OBJEXT) lib_a-strlcat.$(OBJEXT) \
+	lib_a-strlcpy.$(OBJEXT) lib_a-strlen.$(OBJEXT) \
+	lib_a-strlwr.$(OBJEXT) lib_a-strncasecmp.$(OBJEXT) \
+	lib_a-strncat.$(OBJEXT) lib_a-strncmp.$(OBJEXT) \
+	lib_a-strncpy.$(OBJEXT) lib_a-strnlen.$(OBJEXT) \
+	lib_a-strpbrk.$(OBJEXT) lib_a-strrchr.$(OBJEXT) \
+	lib_a-strsep.$(OBJEXT) lib_a-strsignal.$(OBJEXT) \
+	lib_a-strspn.$(OBJEXT) lib_a-strtok.$(OBJEXT) \
+	lib_a-strtok_r.$(OBJEXT) lib_a-strupr.$(OBJEXT) \
+	lib_a-strxfrm.$(OBJEXT) lib_a-strstr.$(OBJEXT) \
+	lib_a-swab.$(OBJEXT) lib_a-timingsafe_bcmp.$(OBJEXT) \
+	lib_a-timingsafe_memcmp.$(OBJEXT) lib_a-u_strerr.$(OBJEXT) \
+	lib_a-wcscat.$(OBJEXT) lib_a-wcschr.$(OBJEXT) \
+	lib_a-wcscmp.$(OBJEXT) lib_a-wcscoll.$(OBJEXT) \
+	lib_a-wcscpy.$(OBJEXT) lib_a-wcscspn.$(OBJEXT) \
+	lib_a-wcslcat.$(OBJEXT) lib_a-wcslcpy.$(OBJEXT) \
+	lib_a-wcslen.$(OBJEXT) lib_a-wcsncat.$(OBJEXT) \
+	lib_a-wcsncmp.$(OBJEXT) lib_a-wcsncpy.$(OBJEXT) \
+	lib_a-wcsnlen.$(OBJEXT) lib_a-wcspbrk.$(OBJEXT) \
+	lib_a-wcsrchr.$(OBJEXT) lib_a-wcsspn.$(OBJEXT) \
+	lib_a-wcsstr.$(OBJEXT) lib_a-wcstok.$(OBJEXT) \
+	lib_a-wcswidth.$(OBJEXT) lib_a-wcsxfrm.$(OBJEXT) \
+	lib_a-wcwidth.$(OBJEXT) lib_a-wmemchr.$(OBJEXT) \
+	lib_a-wmemcmp.$(OBJEXT) lib_a-wmemcpy.$(OBJEXT) \
+	lib_a-wmemmove.$(OBJEXT) lib_a-wmemset.$(OBJEXT) \
+	lib_a-xpg_strerror_r.$(OBJEXT)
 @ELIX_LEVEL_1_FALSE@am__objects_2 = lib_a-bcmp.$(OBJEXT) \
 @ELIX_LEVEL_1_FALSE@	lib_a-memccpy.$(OBJEXT) \
 @ELIX_LEVEL_1_FALSE@	lib_a-mempcpy.$(OBJEXT) \
@@ -129,14 +131,15 @@ am__objects_1 = lib_a-bcopy.$(OBJEXT) lib_a-bzero.$(OBJEXT) \
 lib_a_OBJECTS = $(am_lib_a_OBJECTS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libstring_la_LIBADD =
-am__objects_4 = bcopy.lo bzero.lo index.lo memchr.lo memcmp.lo \
-	memcpy.lo memmove.lo memset.lo rindex.lo strcasecmp.lo \
-	strcat.lo strchr.lo strcmp.lo strcoll.lo strcpy.lo strcspn.lo \
-	strdup.lo strdup_r.lo strerror.lo strerror_r.lo strlcat.lo \
-	strlcpy.lo strlen.lo strlwr.lo strncasecmp.lo strncat.lo \
-	strncmp.lo strncpy.lo strnlen.lo strpbrk.lo strrchr.lo \
-	strsep.lo strsignal.lo strspn.lo strtok.lo strtok_r.lo \
-	strupr.lo strxfrm.lo strstr.lo swab.lo u_strerr.lo wcscat.lo \
+am__objects_4 = bcopy.lo bzero.lo explicit_bzero.lo index.lo memchr.lo \
+	memcmp.lo memcpy.lo memmove.lo memset.lo rindex.lo \
+	strcasecmp.lo strcat.lo strchr.lo strcmp.lo strcoll.lo \
+	strcpy.lo strcspn.lo strdup.lo strdup_r.lo strerror.lo \
+	strerror_r.lo strlcat.lo strlcpy.lo strlen.lo strlwr.lo \
+	strncasecmp.lo strncat.lo strncmp.lo strncpy.lo strnlen.lo \
+	strpbrk.lo strrchr.lo strsep.lo strsignal.lo strspn.lo \
+	strtok.lo strtok_r.lo strupr.lo strxfrm.lo strstr.lo swab.lo \
+	timingsafe_bcmp.lo timingsafe_memcmp.lo u_strerr.lo wcscat.lo \
 	wcschr.lo wcscmp.lo wcscoll.lo wcscpy.lo wcscspn.lo wcslcat.lo \
 	wcslcpy.lo wcslen.lo wcsncat.lo wcsncmp.lo wcsncpy.lo \
 	wcsnlen.lo wcspbrk.lo wcsrchr.lo wcsspn.lo wcsstr.lo wcstok.lo \
@@ -329,6 +332,7 @@ INCLUDES = $(NEWLIB_CFLAGS) $(CROSS_CFLAGS) $(TARGET_CFLAGS)
 GENERAL_SOURCES = \
 	bcopy.c \
 	bzero.c \
+	explicit_bzero.c \
 	index.c \
 	memchr.c \
 	memcmp.c \
@@ -367,6 +371,8 @@ GENERAL_SOURCES = \
 	strxfrm.c  \
 	strstr.c \
 	swab.c \
+	timingsafe_bcmp.c \
+	timingsafe_memcmp.c \
 	u_strerr.c \
 	wcscat.c \
 	wcschr.c \
@@ -430,6 +436,13 @@ libstring_la_LDFLAGS = -Xcompiler -nostdlib
 @USE_LIBTOOL_FALSE@noinst_LIBRARIES = lib.a
 @USE_LIBTOOL_FALSE@lib_a_SOURCES = $(GENERAL_SOURCES) $(ELIX_2_SOURCES) $(ELIX_4_SOURCES)
 @USE_LIBTOOL_FALSE@lib_a_CFLAGS = $(AM_CFLAGS)
+
+#
+# documentation rules
+#
+SUFFIXES = .def
+CHEW = ${top_builddir}/../doc/makedoc -f $(top_srcdir)/../doc/doc.str
+CLEANFILES = $(CHEWOUT_FILES) *.ref
 CHEWOUT_FILES = \
 bcmp.def	memcpy.def	strcmp.def	strncat.def strstr.def \
 bcopy.def	memmove.def	strcoll.def	strncmp.def strtok.def \
@@ -448,10 +461,7 @@ wcswidth.def	wcsxfrm.def	wcwidth.def	wmemchr.def \
 wmemcmp.def	wmemcpy.def	wmemmove.def	wmemset.def \
 memmem.def	memrchr.def	rawmemchr.def	strchrnul.def
 
-SUFFIXES = .def
-CHEW = ../../doc/makedoc -f $(srcdir)/../../doc/doc.str
-TARGETDOC = ../tmp.texi
-CLEANFILES = $(CHEWOUT_FILES) *.ref
+CHAPTERS = strings.tex wcstrings.tex
 all: all-am
 
 .SUFFIXES:
@@ -532,6 +542,12 @@ lib_a-bzero.o: bzero.c
 
 lib_a-bzero.obj: bzero.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-bzero.obj `if test -f 'bzero.c'; then $(CYGPATH_W) 'bzero.c'; else $(CYGPATH_W) '$(srcdir)/bzero.c'; fi`
+
+lib_a-explicit_bzero.o: explicit_bzero.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-explicit_bzero.o `test -f 'explicit_bzero.c' || echo '$(srcdir)/'`explicit_bzero.c
+
+lib_a-explicit_bzero.obj: explicit_bzero.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-explicit_bzero.obj `if test -f 'explicit_bzero.c'; then $(CYGPATH_W) 'explicit_bzero.c'; else $(CYGPATH_W) '$(srcdir)/explicit_bzero.c'; fi`
 
 lib_a-index.o: index.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-index.o `test -f 'index.c' || echo '$(srcdir)/'`index.c
@@ -760,6 +776,18 @@ lib_a-swab.o: swab.c
 
 lib_a-swab.obj: swab.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-swab.obj `if test -f 'swab.c'; then $(CYGPATH_W) 'swab.c'; else $(CYGPATH_W) '$(srcdir)/swab.c'; fi`
+
+lib_a-timingsafe_bcmp.o: timingsafe_bcmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-timingsafe_bcmp.o `test -f 'timingsafe_bcmp.c' || echo '$(srcdir)/'`timingsafe_bcmp.c
+
+lib_a-timingsafe_bcmp.obj: timingsafe_bcmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-timingsafe_bcmp.obj `if test -f 'timingsafe_bcmp.c'; then $(CYGPATH_W) 'timingsafe_bcmp.c'; else $(CYGPATH_W) '$(srcdir)/timingsafe_bcmp.c'; fi`
+
+lib_a-timingsafe_memcmp.o: timingsafe_memcmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-timingsafe_memcmp.o `test -f 'timingsafe_memcmp.c' || echo '$(srcdir)/'`timingsafe_memcmp.c
+
+lib_a-timingsafe_memcmp.obj: timingsafe_memcmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-timingsafe_memcmp.obj `if test -f 'timingsafe_memcmp.c'; then $(CYGPATH_W) 'timingsafe_memcmp.c'; else $(CYGPATH_W) '$(srcdir)/timingsafe_memcmp.c'; fi`
 
 lib_a-u_strerr.o: u_strerr.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(lib_a_CFLAGS) $(CFLAGS) -c -o lib_a-u_strerr.o `test -f 'u_strerr.c' || echo '$(srcdir)/'`u_strerr.c
@@ -1225,9 +1253,13 @@ objectlist.awk.in: $(noinst_LTLIBRARIES)
 	$(CHEW) < $< > $*.def 2> $*.ref
 	touch stmp-def
 
+TARGETDOC ?= ../tmp.texi
+
 doc: $(CHEWOUT_FILES)
-	cat $(srcdir)/strings.tex >> $(TARGETDOC)
-	cat $(srcdir)/wcstrings.tex >> $(TARGETDOC)
+	for chapter in $(CHAPTERS) ; \
+	do \
+	  cat $(srcdir)/$$chapter >> $(TARGETDOC) ; \
+	done
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

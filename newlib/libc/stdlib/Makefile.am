@@ -13,6 +13,7 @@ GENERAL_SOURCES = \
 	_Exit.c		\
 	abort.c  	\
 	abs.c 		\
+	aligned_alloc.c	\
 	assert.c  	\
 	atexit.c	\
 	atof.c 		\
@@ -45,13 +46,18 @@ GENERAL_SOURCES = \
 	mlock.c		\
 	mprec.c		\
 	mstats.c	\
+	on_exit_args.c	\
+	quick_exit.c	\
 	rand.c		\
 	rand_r.c	\
+	random.c	\
 	realloc.c	\
 	reallocf.c	\
 	sb_charsets.c	\
 	strtod.c	\
+	strtodg.c	\
 	strtol.c	\
+	strtorx.c	\
 	strtoul.c	\
 	utoa.c          \
 	wcstod.c	\
@@ -97,6 +103,8 @@ MALLOCR=mallocr
 endif
 
 EXTENDED_SOURCES = \
+	arc4random.c	\
+	arc4random_uniform.c \
 	cxa_atexit.c	\
 	cxa_finalize.c	\
 	drand48.c	\
@@ -157,6 +165,7 @@ ELIX_3_SOURCES = \
 	setenv_r.c
 
 ELIX_4_SOURCES = \
+	rpmatch.c	\
 	system.c
 
 if ELIX_LEVEL_1
@@ -274,6 +283,8 @@ CHEWOUT_FILES= \
 	on_exit.def	\
 	rand.def	\
 	rand48.def	\
+	random.def	\
+	rpmatch.def	\
 	strtod.def 	\
 	strtol.def 	\
 	strtoll.def 	\
@@ -290,20 +301,7 @@ CHEWOUT_FILES= \
 	wcstombs.def	\
 	wctomb.def	
 
-SUFFIXES = .def
-
-CHEW = ../../doc/makedoc -f $(srcdir)/../../doc/doc.str
-
-.c.def:
-	$(CHEW) < $< > $*.def 2> $*.ref
-	touch stmp-def
-
-TARGETDOC = ../tmp.texi
-
-doc: $(CHEWOUT_FILES)
-	cat $(srcdir)/stdlib.tex >> $(TARGETDOC)
-
-CLEANFILES = $(CHEWOUT_FILES) *.ref
+CHAPTERS = stdlib.tex
 
 $(lpfx)dtoa.$(oext): dtoa.c mprec.h
 $(lpfx)ldtoa.$(oext): ldtoa.c mprec.h

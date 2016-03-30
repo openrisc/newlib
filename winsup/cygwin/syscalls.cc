@@ -405,7 +405,7 @@ try_to_bin (path_conv &pc, HANDLE &fh, ACCESS_MASK access, ULONG flags)
 		    "failed, status = %y", pc.get_nt_native_path (), status);
       goto out;
     }
-  RtlInt64ToHexUnicodeString (pfii->FileId.QuadPart, &recycler, TRUE);
+  RtlInt64ToHexUnicodeString (pfii->IndexNumber.QuadPart, &recycler, TRUE);
   RtlInt64ToHexUnicodeString (hash_path_name (0, pc.get_nt_native_path ()),
 			      &recycler, TRUE);
   /* Shoot. */
@@ -1434,8 +1434,7 @@ open (const char *unix_path, int flags, ...)
 		}
 	      else if ((fh->is_fs_special ()
 	      		&& fh->device_access_denied (flags))
-		       || !fh->open_with_arch (flags, (mode & 07777)
-						      & ~cygheap->umask))
+		       || !fh->open_with_arch (flags, mode & 07777))
 		delete fh;
 	      else
 		{
@@ -2549,7 +2548,7 @@ rename (const char *oldpath, const char *newpath)
 	      && NT_SUCCESS (NtQueryInformationFile (nfh, &io, &nfii,
 						     sizeof nfii,
 						     FileInternalInformation))
-	      && ofii.FileId.QuadPart == nfii.FileId.QuadPart)
+	      && ofii.IndexNumber.QuadPart == nfii.IndexNumber.QuadPart)
 	    {
 	      debug_printf ("%s and %s are the same file", oldpath, newpath);
 	      NtClose (nfh);
@@ -3839,7 +3838,7 @@ getpriority (int which, id_t who)
 	  case PRIO_USER:
 	    if ((uid_t) who == p->uid && p->nice < nice)
 	      nice = p->nice;
-	      break;
+	    break;
 	  }
     }
 out:
@@ -3956,7 +3955,7 @@ endutent ()
     }
 }
 
-extern "C" void
+extern "C" int
 utmpname (const char *file)
 {
   __try
@@ -3965,13 +3964,17 @@ utmpname (const char *file)
 	{
 	  endutent ();
 	  utmp_file = strdup (file);
-	  debug_printf ("New UTMP file: %s", utmp_file);
-	  return;
+	  if (utmp_file)
+	    {
+	      debug_printf ("New UTMP file: %s", utmp_file);
+	      return 0;
+	    }
 	}
     }
-  __except (NO_ERROR) {}
+  __except (EFAULT) {}
   __endtry
-  debug_printf ("Invalid file");
+  debug_printf ("Setting UTMP file failed");
+  return -1;
 }
 
 EXPORT_ALIAS (utmpname, utmpxname)

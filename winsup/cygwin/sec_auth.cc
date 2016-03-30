@@ -134,11 +134,11 @@ extract_nt_dom_user (const struct passwd *pw, PWCHAR domain, PWCHAR user)
     {
       c = strchrnul (d + 2, ',');
       if ((u = strchrnul (d + 2, '\\')) >= c)
-       u = d + 1;
+	u = d + 1;
       else if (u - d <= MAX_DOMAIN_NAME_LEN + 2)
-       sys_mbstowcs (domain, MAX_DOMAIN_NAME_LEN + 1, d + 2, u - d - 1);
+	sys_mbstowcs (domain, MAX_DOMAIN_NAME_LEN + 1, d + 2, u - d - 1);
       if (c - u <= UNLEN + 1)
-       sys_mbstowcs (user, UNLEN + 1, u + 1, c - u);
+	sys_mbstowcs (user, UNLEN + 1, u + 1, c - u);
     }
 }
 
@@ -172,13 +172,17 @@ cygwin_logon_user (const struct passwd *pw, const char *password)
     }
   else
     {
+      HANDLE hPrivToken = NULL;
+
       /* See the comment in get_full_privileged_inheritable_token for a
       description why we enable TCB privileges here. */
       push_self_privilege (SE_TCB_PRIVILEGE, true);
-      hToken = get_full_privileged_inheritable_token (hToken);
+      hPrivToken = get_full_privileged_inheritable_token (hToken);
       pop_self_privilege ();
-      if (!hToken)
-	hToken = INVALID_HANDLE_VALUE;
+      if (!hPrivToken)
+	debug_printf ("Can't fetch linked token (%E), use standard token");
+      else
+	hToken = hPrivToken;
     }
   RtlSecureZeroMemory (passwd, NT_MAX_PATH);
   cygheap->user.reimpersonate ();
@@ -499,10 +503,8 @@ sid_in_token_groups (PTOKEN_GROUPS grps, cygpsid sid)
 }
 
 static void
-get_token_group_sidlist (cygsidlist &grp_list, PTOKEN_GROUPS my_grps,
-			 LUID auth_luid, int &auth_pos)
+get_token_group_sidlist (cygsidlist &grp_list, PTOKEN_GROUPS my_grps)
 {
-  auth_pos = -1;
   if (my_grps)
     {
       grp_list += well_known_local_sid;
@@ -533,16 +535,6 @@ get_token_group_sidlist (cygsidlist &grp_list, PTOKEN_GROUPS my_grps,
       grp_list += well_known_local_sid;
       grp_list *= well_known_interactive_sid;
       grp_list *= well_known_users_sid;
-    }
-  if (get_ll (auth_luid) != 999LL) /* != SYSTEM_LUID */
-    {
-      for (DWORD i = 0; i < my_grps->GroupCount; ++i)
-	if (my_grps->Groups[i].Attributes & SE_GROUP_LOGON_ID)
-	  {
-	    grp_list += my_grps->Groups[i].Sid;
-	    auth_pos = grp_list.count () - 1;
-	    break;
-	  }
     }
 }
 
@@ -585,14 +577,12 @@ get_server_groups (cygsidlist &grp_list, PSID usersid)
 
 static bool
 get_initgroups_sidlist (cygsidlist &grp_list, PSID usersid, PSID pgrpsid,
-			PTOKEN_GROUPS my_grps, LUID auth_luid, int &auth_pos)
+			PTOKEN_GROUPS my_grps)
 {
   grp_list *= well_known_world_sid;
   grp_list *= well_known_authenticated_users_sid;
-  if (well_known_system_sid == usersid)
-    auth_pos = -1;
-  else
-    get_token_group_sidlist (grp_list, my_grps, auth_luid, auth_pos);
+  if (well_known_system_sid != usersid)
+    get_token_group_sidlist (grp_list, my_grps);
   if (!get_server_groups (grp_list, usersid))
     return false;
 
@@ -603,12 +593,11 @@ get_initgroups_sidlist (cygsidlist &grp_list, PSID usersid, PSID pgrpsid,
 
 static void
 get_setgroups_sidlist (cygsidlist &tmp_list, PSID usersid,
-		       PTOKEN_GROUPS my_grps, user_groups &groups,
-		       LUID auth_luid, int &auth_pos)
+		       PTOKEN_GROUPS my_grps, user_groups &groups)
 {
   tmp_list *= well_known_world_sid;
   tmp_list *= well_known_authenticated_users_sid;
-  get_token_group_sidlist (tmp_list, my_grps, auth_luid, auth_pos);
+  get_token_group_sidlist (tmp_list, my_grps);
   get_server_groups (tmp_list, usersid);
   for (int gidx = 0; gidx < groups.sgsids.count (); gidx++)
     tmp_list += groups.sgsids.sids[gidx];
@@ -774,6 +763,7 @@ verify_token (HANDLE token, cygsid &usersid, user_groups &groups, bool *pintern)
   NTSTATUS status;
   ULONG size;
   bool intern = false;
+  tmp_pathbuf tp;
 
   if (pintern)
     {
@@ -819,16 +809,10 @@ verify_token (HANDLE token, cygsid &usersid, user_groups &groups, bool *pintern)
 	return gsid == groups.pgsid;
     }
 
-  PTOKEN_GROUPS my_grps;
+  PTOKEN_GROUPS my_grps = (PTOKEN_GROUPS) tp.w_get ();
 
-  status = NtQueryInformationToken (token, TokenGroups, NULL, 0, &size);
-  if (!NT_SUCCESS (status) && status != STATUS_BUFFER_TOO_SMALL)
-    {
-      debug_printf ("NtQueryInformationToken(token, TokenGroups), %y", status);
-      return false;
-    }
-  my_grps = (PTOKEN_GROUPS) alloca (size);
-  status = NtQueryInformationToken (token, TokenGroups, my_grps, size, &size);
+  status = NtQueryInformationToken (token, TokenGroups, my_grps,
+				    2 * NT_MAX_PATH, &size);
   if (!NT_SUCCESS (status))
     {
       debug_printf ("NtQueryInformationToken(my_token, TokenGroups), %y",
@@ -887,7 +871,16 @@ create_token (cygsid &usersid, user_groups &new_groups)
   SECURITY_QUALITY_OF_SERVICE sqos =
     { sizeof sqos, SecurityImpersonation, SECURITY_STATIC_TRACKING, FALSE };
   OBJECT_ATTRIBUTES oa = { sizeof oa, 0, 0, 0, 0, &sqos };
-  LUID auth_luid = SYSTEM_LUID;
+  /* Up to Windows 7, when using a authwentication LUID other than "Anonymous",
+     Windows whoami prints the wrong username, the one from the login session,
+     not the one from the actual user token of the process.  This is apparently
+     fixed in Windows 8.  However, starting with Windows 8, access rights of
+     the anonymous logon session is further restricted.  Therefore we create
+     the new user token with the authentication id of the local service
+     account.  Hopefully that's sufficient. */
+  const LUID auth_luid_7 = ANONYMOUS_LOGON_LUID;
+  const LUID auth_luid_8 = LOCALSERVICE_LUID;
+  LUID auth_luid = wincap.has_broken_whoami () ? auth_luid_7 : auth_luid_8;
   LARGE_INTEGER exp = { QuadPart:INT64_MAX };
 
   TOKEN_USER user;
@@ -905,6 +898,7 @@ create_token (cygsid &usersid, user_groups &new_groups)
   HANDLE token = INVALID_HANDLE_VALUE;
   HANDLE primary_token = INVALID_HANDLE_VALUE;
 
+  tmp_pathbuf tp;
   PTOKEN_GROUPS my_tok_gsids = NULL;
   cygpsid mandatory_integrity_sid;
   ULONG size;
@@ -936,40 +930,26 @@ create_token (cygsid &usersid, user_groups &new_groups)
 	  if (!NT_SUCCESS (status))
 	    debug_printf ("NtQueryInformationToken(hProcToken, "
 			  "TokenStatistics), %y", status);
-	  else
-	    auth_luid = stats.AuthenticationId;
 	}
 
       /* Retrieving current processes group list to be able to inherit
 	 some important well known group sids. */
-      status = NtQueryInformationToken (hProcToken, TokenGroups, NULL, 0,
-					&size);
-      if (!NT_SUCCESS (status) && status != STATUS_BUFFER_TOO_SMALL)
-	debug_printf ("NtQueryInformationToken(hProcToken, TokenGroups), %y",
-		      status);
-      else if (!(my_tok_gsids = (PTOKEN_GROUPS) malloc (size)))
-	debug_printf ("malloc (my_tok_gsids) failed.");
-      else
+      my_tok_gsids = (PTOKEN_GROUPS) tp.w_get ();
+      status = NtQueryInformationToken (hProcToken, TokenGroups, my_tok_gsids,
+					2 * NT_MAX_PATH, &size);
+      if (!NT_SUCCESS (status))
 	{
-	  status = NtQueryInformationToken (hProcToken, TokenGroups,
-					    my_tok_gsids, size, &size);
-	  if (!NT_SUCCESS (status))
-	    {
-	      debug_printf ("NtQueryInformationToken(hProcToken, TokenGroups), "
-			    "%y", status);
-	      free (my_tok_gsids);
-	      my_tok_gsids = NULL;
-	    }
+	  debug_printf ("NtQueryInformationToken(hProcToken, TokenGroups), "
+			"%y", status);
+	  my_tok_gsids = NULL;
 	}
     }
 
   /* Create list of groups, the user is member in. */
-  int auth_pos;
   if (new_groups.issetgroups ())
-    get_setgroups_sidlist (tmp_gsids, usersid, my_tok_gsids, new_groups,
-			   auth_luid, auth_pos);
+    get_setgroups_sidlist (tmp_gsids, usersid, my_tok_gsids, new_groups);
   else if (!get_initgroups_sidlist (tmp_gsids, usersid, new_groups.pgsid,
-				    my_tok_gsids, auth_luid, auth_pos))
+				    my_tok_gsids))
     goto out;
 
   /* Primary group. */
@@ -987,8 +967,6 @@ create_token (cygsid &usersid, user_groups &new_groups)
 					    | SE_GROUP_ENABLED_BY_DEFAULT
 					    | SE_GROUP_ENABLED;
     }
-  if (auth_pos >= 0)
-    new_tok_gsids->Groups[auth_pos].Attributes |= SE_GROUP_LOGON_ID;
 
   /* Retrieve list of privileges of that user.  Based on the usersid and
      the returned privileges, get_priv_list sets the mandatory_integrity_sid
@@ -1030,8 +1008,6 @@ out:
     CloseHandle (token);
   if (privs)
     free (privs);
-  if (my_tok_gsids)
-    free (my_tok_gsids);
   lsa_close_policy (lsa);
 
   debug_printf ("%p = create_token ()", primary_token);
@@ -1048,7 +1024,6 @@ lsaauth (cygsid &usersid, user_groups &new_groups)
   LSA_OPERATIONAL_MODE sec_mode;
   NTSTATUS status, sub_status;
   ULONG package_id, size;
-  LUID auth_luid = SYSTEM_LUID;
   struct {
     LSA_STRING str;
     CHAR buf[16];
@@ -1111,12 +1086,10 @@ lsaauth (cygsid &usersid, user_groups &new_groups)
   ts.SourceIdentifier.LowPart = 0x0103;
 
   /* Create list of groups, the user is member in. */
-  int auth_pos;
   if (new_groups.issetgroups ())
-    get_setgroups_sidlist (tmp_gsids, usersid, NULL, new_groups, auth_luid,
-			   auth_pos);
+    get_setgroups_sidlist (tmp_gsids, usersid, NULL, new_groups);
   else if (!get_initgroups_sidlist (tmp_gsids, usersid, new_groups.pgsid,
-				    NULL, auth_luid, auth_pos))
+				    NULL))
     goto out;
 
   tmp_gsids.debug_print ("tmp_gsids");

@@ -90,8 +90,8 @@ Windows, while `long' on 64 bit Cygwin is 8 bytes.</para>
   ReadFile (HANDLE, LPVOID, DWORD, LPDWORD, LPOVERLAPPED);
 </screen>
 
-<para>In the 32 bit Cygwin and Mingw environments, as well as in the 64 bit
-Mingw environment, it is no problem to substitute DWORD with unsigned
+<para>In the 32 bit Cygwin and Mingw-w64 environments, as well as in the 64 bit
+Mingw-w64 environment, it is no problem to substitute DWORD with unsigned
 long:</para>
 
 <screen>
@@ -478,14 +478,10 @@ as well as the User's Guide section
 <question><para>How do I compile a Win32 executable that doesn't use Cygwin?</para></question>
 <answer>
 
-<para>The compilers provided by the <literal>mingw-gcc</literal>,
-<literal>mingw64-i686-gcc</literal>, and <literal>mingw64-x86_64-gcc</literal>
-packages link against standard Microsoft DLLs instead of Cygwin. This is
-desirable for native Windows programs that don't need a UNIX emulation layer.
-</para>
-<para>This is not to be confused with 'MinGW' (Minimalist GNU for Windows),
-which is a completely separate effort.  That project's home page is
-<ulink url="http://www.mingw.org/index.shtml"/>.
+<para>The compilers provided by the <literal>mingw64-i686-gcc</literal> and
+<literal>mingw64-x86_64-gcc</literal> packages link against standard Microsoft
+DLLs instead of Cygwin. This is desirable for native Windows programs that
+don't need a UNIX emulation layer.
 </para>
 </answer></qandaentry>
 
@@ -549,7 +545,7 @@ have our own Win32 headers which are pretty complete.
 </answer></qandaentry>
 
 <qandaentry id="faq.programming.msvs-mingw">
-<question><para>How do I use <literal>cygwin1.dll</literal> with Visual Studio or MinGW?</para></question>
+<question><para>How do I use <literal>cygwin1.dll</literal> with Visual Studio or Mingw-w64?</para></question>
 <answer>
 
 <para>Before you begin, note that Cygwin is licensed under the GNU GPL (as
@@ -859,15 +855,22 @@ on using <literal>strace</literal>, see the Cygwin User's Guide.
 </answer></qandaentry>
 
 <qandaentry id="faq.programming.gdb-signals">
-<question><para>Why doesn't gdb handle signals?</para></question>
+<question><para>How does gdb handle signals?</para></question>
 <answer>
 
-<para>Unfortunately, there is only minimal signal handling support in gdb
-currently.  Signal handling only works with Windows-type signals.
-SIGINT may work, SIGFPE may work, SIGSEGV definitely does.  You cannot
-'stop', 'print' or 'nopass' signals like SIGUSR1 or SIGHUP to the
-process being debugged.
+<para>
+gdb maps known Windows exceptions to signals such as SIGSEGV, SIGFPE, SIGTRAP,
+SIGINT and SIGILL.  Other Windows exceptions are passed on to the handler (if
+any), and reported as an unknown signal if an unhandled (second chance)
+exception occurs.
 </para>
+
+<para>
+There is also an experimental feature to notify gdb of purely Cygwin signals
+like SIGABRT, SIGHUP or SIGUSR1.  This currently has some known problems, for
+example, single-stepping from these signals may not work as expected.
+</para>
+
 </answer></qandaentry>
 
 <qandaentry id="faq.programming.linker">

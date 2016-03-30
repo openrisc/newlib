@@ -141,23 +141,6 @@ typedef unsigned long vm_size_t;
 typedef void *vm_object_t;
 #endif /* __vm_object_t_defined */
 
-#ifndef __u_int8_t_defined
-#define __u_int8_t_defined
-typedef unsigned char u_int8_t;
-#endif
-#ifndef __u_int16_t_defined
-#define __u_int16_t_defined
-typedef __uint16_t u_int16_t;
-#endif
-#ifndef __u_int32_t_defined
-#define __u_int32_t_defined
-typedef __uint32_t u_int32_t;
-#endif
-#ifndef __u_int64_t_defined
-#define __u_int64_t_defined
-typedef __uint64_t u_int64_t;
-#endif
-
 #ifndef __register_t_defined
 #define __register_t_defined
 typedef __int32_t register_t;
@@ -184,6 +167,8 @@ typedef struct __pthread_attr_t {char __dummy;} *pthread_attr_t;
 typedef struct __pthread_mutexattr_t {char __dummy;} *pthread_mutexattr_t;
 typedef struct __pthread_condattr_t {char __dummy;} *pthread_condattr_t;
 typedef struct __pthread_cond_t {char __dummy;} *pthread_cond_t;
+typedef struct __pthread_barrierattr_t {char __dummy;} *pthread_barrierattr_t;
+typedef struct __pthread_barrier_t {char __dummy;} *pthread_barrier_t;
 
   /* These variables are not user alterable. This means you!. */
 typedef struct
@@ -207,6 +192,8 @@ typedef class pthread_attr *pthread_attr_t;
 typedef class pthread_mutexattr *pthread_mutexattr_t;
 typedef class pthread_condattr *pthread_condattr_t;
 typedef class pthread_cond *pthread_cond_t;
+typedef class pthread_barrier *pthread_barrier_t;
+typedef class pthread_barrierattr *pthread_barrierattr_t;
 typedef class pthread_once pthread_once_t;
 typedef class pthread_spinlock *pthread_spinlock_t;
 typedef class pthread_rwlock *pthread_rwlock_t;

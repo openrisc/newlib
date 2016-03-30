@@ -46,8 +46,6 @@ details. */
 #define srTop (con.b.srWindow.Top + con.scroll_region.Top)
 #define srBottom ((con.scroll_region.Bottom < 0) ? con.b.srWindow.Bottom : con.b.srWindow.Top + con.scroll_region.Bottom)
 
-const char *get_nonascii_key (INPUT_RECORD&, char *);
-
 const unsigned fhandler_console::MAX_WRITE_CHARS = 16384;
 
 fhandler_console::console_state NO_COPY *fhandler_console::shared_console_info;
@@ -196,6 +194,7 @@ fhandler_console::setup ()
 	  con.meta_mask |= RIGHT_ALT_PRESSED;
 	con.set_default_attr ();
 	con.backspace_keycode = CERASE;
+	con.cons_rapoi = NULL;
 	shared_console_info->tty_min_state.is_console = true;
       }
 }
@@ -218,8 +217,7 @@ tty_list::get_cttyp ()
 inline DWORD
 dev_console::con_to_str (char *d, int dlen, WCHAR w)
 {
-  return sys_cp_wcstombs (cygheap->locale.wctomb, cygheap->locale.charset,
-			  d, dlen, &w, 1);
+  return sys_wcstombs (d, dlen, &w, 1);
 }
 
 inline UINT
@@ -310,6 +308,14 @@ fhandler_console::read (void *pv, size_t& buflen)
 
   int ch;
   set_input_state ();
+
+  /* Check console read-ahead buffer filled from terminal requests */
+  if (con.cons_rapoi && *con.cons_rapoi)
+    {
+      *buf = *con.cons_rapoi++;
+      buflen = 1;
+      return;
+    }
 
   int copied_chars = get_readahead_into_buffer (buf, buflen);
 
@@ -738,8 +744,6 @@ dev_console::fillin (HANDLE h)
     {
       dwWinSize.Y = 1 + b.srWindow.Bottom - b.srWindow.Top;
       dwWinSize.X = 1 + b.srWindow.Right - b.srWindow.Left;
-      if (b.dwSize.Y != b.dwSize.Y || b.dwSize.X != b.dwSize.X)
-	dwEnd.X = dwEnd.Y = 0;
       if (b.dwCursorPosition.Y > dwEnd.Y
 	  || (b.dwCursorPosition.Y >= dwEnd.Y && b.dwCursorPosition.X > dwEnd.X))
 	dwEnd = b.dwCursorPosition;
@@ -1900,8 +1904,11 @@ fhandler_console::char_command (char c)
 	strcpy (buf, "\033[?6c");
       /* The generated report needs to be injected for read-ahead into the
 	 fhandler_console object associated with standard input.
-	 The current call does not work. */
-      puts_readahead (buf);
+	 So puts_readahead does not work.
+	 Use a common console read-ahead buffer instead. */
+      con.cons_rapoi = NULL;
+      strcpy (con.cons_rabuf, buf);
+      con.cons_rapoi = con.cons_rabuf;
       break;
     case 'n':
       switch (con.args[0])
@@ -1911,9 +1918,11 @@ fhandler_console::char_command (char c)
 	  y -= con.b.srWindow.Top;
 	  /* x -= con.b.srWindow.Left;		// not available yet */
 	  __small_sprintf (buf, "\033[%d;%dR", y + 1, x + 1);
-	  puts_readahead (buf);
+	  con.cons_rapoi = NULL;
+	  strcpy (con.cons_rabuf, buf);
+	  con.cons_rapoi = con.cons_rabuf;
 	  break;
-      default:
+	default:
 	  goto bad_escape;
 	}
       break;
@@ -2378,7 +2387,7 @@ static const struct {
 };
 
 const char *
-get_nonascii_key (INPUT_RECORD& input_rec, char *tmp)
+fhandler_console::get_nonascii_key (INPUT_RECORD& input_rec, char *tmp)
 {
 #define NORMAL  0
 #define SHIFT	1

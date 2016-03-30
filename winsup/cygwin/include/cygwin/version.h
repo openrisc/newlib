@@ -42,8 +42,8 @@ details. */
 	 the Cygwin shared library".  This version is used to track important
 	 changes to the DLL and is mainly informative in nature. */
 
-#define CYGWIN_VERSION_DLL_MAJOR 2002
-#define CYGWIN_VERSION_DLL_MINOR 1
+#define CYGWIN_VERSION_DLL_MAJOR 2005
+#define CYGWIN_VERSION_DLL_MINOR 0
 
       /* Major numbers before CYGWIN_VERSION_DLL_EPOCH are
 	 incompatible. */
@@ -471,13 +471,31 @@ details. */
       287: Export issetugid.
       288: Export getcontext, makecontext, setcontext, swapcontext.
       289: Export sigsetjmp, siglongjmp.
+      290: Add sysconf cache handling.
+      291: Export aligned_alloc, at_quick_exit, quick_exit.
+      292: Export rpmatch.
+      293: Convert utmpname/utmpxname to int.
+      294: Export clog10, clog10f.
+      295: Export POSIX ACL functions.
+      296: Export __getpagesize.
+      297: Export missing math functions, acoshl, acosl, asinhl, asinl, atan2l,
+	   atanhl, atanl, cacoshl, cacosl, cargl, casinhl, casinl, catanhl,
+	   catanl, ccoshl, ccosl, ceill, cexpl, clog10l, clogl, conjl,
+	   copysignl, coshl, cosl, cpowl, cprojl, csinhl, csinl, csqrtl, ctanhl,
+	   ctanl, dreml, erfcl, erfl, exp10l, exp2l, expl, expm1l, fabsl, fdiml,
+	   floorl, fmal, fmaxl, fminl, fmodl, frexpl, ilogbl, isinfl, isnanl,
+	   ldexpl, lgammal, lgammal_r, llroundl, log10l, log1pl, log2l, logbl,
+	   logl, lroundl, modfl, nearbyintl, nextafterl, nexttoward,
+	   nexttowardf, nexttowardl, pow10l, powl, remainderl, remquol, roundl,
+	   scalbl, scalblnl, scalbnl, sincosl, sinhl, sinl, tanhl, tanl,
+	   tgammal, truncl.
      */
 
      /* Note that we forgot to bump the api for ualarm, strtoll, strtoull,
 	sigaltstack, sethostname. */
 
 #define CYGWIN_VERSION_API_MAJOR 0
-#define CYGWIN_VERSION_API_MINOR 289
+#define CYGWIN_VERSION_API_MINOR 297
 
      /* There is also a compatibity version number associated with the
 	shared memory regions.  It is incremented when incompatible

@@ -25,11 +25,11 @@ static void
 wow64_eval_expected_main_stack (PVOID &allocbase, PVOID &stackbase)
 {
   PIMAGE_DOS_HEADER dosheader;
-  PIMAGE_NT_HEADERS32 ntheader;
-  DWORD size;
+  PIMAGE_NT_HEADERS ntheader;
+  SIZE_T size;
 
   dosheader = (PIMAGE_DOS_HEADER) GetModuleHandle (NULL);
-  ntheader = (PIMAGE_NT_HEADERS32) ((PBYTE) dosheader + dosheader->e_lfanew);
+  ntheader = (PIMAGE_NT_HEADERS) ((PBYTE) dosheader + dosheader->e_lfanew);
   /* The main thread stack is expected to be located at 0x30000, which is the
      case for all observed NT systems up to Server 2003 R2, unless the
      stacksize requested by the StackReserve field in the PE/COFF header is
@@ -71,7 +71,7 @@ wow64_test_for_64bit_parent ()
      we have to "alloc_stack_hard_way".  However, this fails in almost all
      cases because the stack slot of the parent process is taken by something
      else in the child process.
-     What we do here is to check if the current stack is the excpected main
+     What we do here is to check if the current stack is the expected main
      thread stack and if not, if we really have been started from a 64 bit
      process here.  If so, we note this fact in wow64_needs_stack_adjustment
      so we can workaround the stack problem in _dll_crt0.  See there for how
@@ -86,7 +86,7 @@ wow64_test_for_64bit_parent ()
   /* First check if the current stack is where it belongs.  If so, we don't
      have to do anything special.  This is the case on Vista and later. */
   wow64_eval_expected_main_stack (allocbase, stackbase);
-  if (&wow64 >= (PULONG) allocbase && &wow64 < (PULONG) stackbase)
+  if (&wow64 >= (PULONG_PTR) allocbase && &wow64 < (PULONG_PTR) stackbase)
     return false;
 
   /* Check if the parent is a native 64 bit process.  Unfortunately there's
@@ -171,10 +171,10 @@ wow64_revert_to_original_stack (PVOID &allocationbase)
      accordingly, and return the new, 16 byte aligned address for the
      stack pointer.  The second half of the stack move is done by the
      caller _dll_crt0. */
-  _tlsbase = (char *) newbase;
-  _tlstop = (char *) newtop;
+  NtCurrentTeb ()->Tib.StackBase = (char *) newbase;
+  NtCurrentTeb ()->Tib.StackLimit = (char *) newtop;
   _main_tls = &_my_tls;
-  return PTR_ADD (_tlsbase, -16);
+  return PTR_ADD (NtCurrentTeb ()->Tib.StackBase, -16);
 }
 
 /* Respawn WOW64 process. This is only called if we can't reuse the original

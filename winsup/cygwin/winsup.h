@@ -19,10 +19,8 @@ details. */
 
 #define EXPORT_ALIAS(sym,symalias) extern "C" __typeof (sym) symalias __attribute__ ((alias(#sym)));
 
-/* Fun, fun, fun.  On Mingw64, WINVER is set according to the value of
-   _WIN32_WINNT, on Mingw32 it's exactly the opposite... */
-#define _WIN32_WINNT 0x0602
-#define WINVER 0x0602
+#define _WIN32_WINNT 0x0a00
+#define WINVER 0x0a00
 
 #define _NO_W32_PSEUDO_MODIFIERS
 
@@ -261,14 +259,6 @@ extern inline bool flush_file_buffers (HANDLE h)
 
 /* Make sure that regular ExitThread is never called */
 #define ExitThread exit_thread
-
-/**************************** Exports ******************************/
-
-extern "C" {
-int cygwin_select (int , fd_set *, fd_set *, fd_set *,
-		   struct timeval *to);
-int cygwin_gethostname (char *__name, size_t __len);
-};
 
 /*************************** Unsorted ******************************/
 

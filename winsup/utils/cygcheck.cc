@@ -1,7 +1,7 @@
 /* cygcheck.cc
 
    Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
-   2009, 2010, 2011, 2012, 2013, 2014 Red Hat, Inc.
+   2009, 2010, 2011, 2012, 2013, 2014, 2015 Red Hat, Inc.
 
    This file is part of Cygwin.
 
@@ -27,7 +27,6 @@
 #include "../cygwin/include/sys/cygwin.h"
 #define _NOMNTENT_MACROS
 #include "../cygwin/include/mntent.h"
-#include "../cygwin/cygprops.h"
 #undef cygwin_internal
 #include "loadlib.h"
 
@@ -50,7 +49,6 @@ int find_package = 0;
 int list_package = 0;
 int grep_packages = 0;
 int del_orphaned_reg = 0;
-int unique_object_name_opt = 0;
 
 static char emptystr[] = "";
 
@@ -132,9 +130,6 @@ static common_apps[] = {
 enum
 {
   CO_DELETE_KEYS = 0x100,
-  CO_ENABLE_UON = 0x101,
-  CO_DISABLE_UON = 0x102,
-  CO_SHOW_UON = 0x103
 };
 
 static int num_paths, max_paths;
@@ -764,7 +759,12 @@ track_down (const char *file, const char *suffix, int lvl)
   const char *path = find_on_path (file, suffix, false, true);
   if (!path)
     {
-      display_error ("track_down: could not find %s\n", file);
+      /* The api-ms-win-*.dll files are in system32/downlevel and not in the
+	 DLL search path, so find_on_path doesn't find them.  Since they are
+	 never actually linked against by the executables, they are of no
+	 interest to us.  Skip any error message in not finding them. */
+      if (strncasecmp (file, "api-ms-win-", 11) || strcasecmp (suffix, ".dll"))
+	display_error ("track_down: could not find %s\n", file);
       return false;
     }
 
@@ -1336,89 +1336,6 @@ memmem (char *haystack, size_t haystacklen,
   return NULL;
 }
 
-int
-handle_unique_object_name (int opt, char *path)
-{
-  HANDLE fh, fm;
-  void *haystack = NULL;
-
-  if (!path || !*path)
-    usage (stderr, 1);
-
-  DWORD access, share, protect, mapping;
-
-  if (opt == CO_SHOW_UON)
-    {
-      access = GENERIC_READ;
-      share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-      protect = PAGE_READONLY;
-      mapping = FILE_MAP_READ;
-    }
-  else
-    {
-      access = GENERIC_READ | GENERIC_WRITE;
-      share = 0;
-      protect = PAGE_READWRITE;
-      mapping = FILE_MAP_WRITE;
-    }
-
-  fh = CreateFile (path, access, share, NULL, OPEN_EXISTING,
-		   FILE_FLAG_BACKUP_SEMANTICS, NULL);
-  if (fh == INVALID_HANDLE_VALUE)
-    {
-      DWORD err = GetLastError ();
-      switch (err)
-	{
-	case ERROR_SHARING_VIOLATION:
-	  display_error ("%s still used by other Cygwin processes.\n"
-			 "Please stop all of them and retry.", path);
-	  break;
-	case ERROR_ACCESS_DENIED:
-	  display_error (
-	    "Your permissions are not sufficient to change the file \"%s\"",
-	    path);
-	  break;
-	case ERROR_FILE_NOT_FOUND:
-	  display_error ("%s: No such file.", path);
-	  break;
-	default:
-	  display_error (path, true, false);
-	  break;
-	}
-      return 1;
-    }
-  if (!(fm = CreateFileMapping (fh, NULL, protect, 0, 0, NULL)))
-    display_error ("CreateFileMapping");
-  else if (!(haystack = MapViewOfFile (fm, mapping, 0, 0, 0)))
-    display_error ("MapViewOfFile");
-  else
-    {
-      size_t haystacklen = GetFileSize (fh, NULL);
-      cygwin_props_t *cygwin_props = (cygwin_props_t *)
-	       memmem ((char *) haystack, haystacklen,
-		       CYGWIN_PROPS_MAGIC, sizeof (CYGWIN_PROPS_MAGIC));
-      if (!cygwin_props)
-	display_error ("Can't find Cygwin properties in %s", path);
-      else
-	{
-	  if (opt != CO_SHOW_UON)
-	    cygwin_props->disable_key = opt - CO_ENABLE_UON;
-	  printf ("Unique object names are %s\n",
-		  cygwin_props->disable_key ? "disabled" : "enabled");
-	  UnmapViewOfFile (haystack);
-	  CloseHandle (fm);
-	  CloseHandle (fh);
-	  return 0;
-	}
-    }
-  if (haystack)
-    UnmapViewOfFile (haystack);
-  if (fm)
-    CloseHandle (fm);
-  CloseHandle (fh);
-  return 1;
-}
-
 extern "C" NTSTATUS NTAPI RtlGetVersion (PRTL_OSVERSIONINFOEXW);
 
 static void
@@ -1459,35 +1376,41 @@ dump_sysinfo ()
     {
     case VER_PLATFORM_WIN32_NT:
       is_nt = true;
-      if (osversion.dwMajorVersion == 6)
+      if (osversion.dwMajorVersion >= 6)
 	{
 	  HMODULE k32 = GetModuleHandleW (L"kernel32.dll");
 	  BOOL (WINAPI *GetProductInfo) (DWORD, DWORD, DWORD, DWORD, PDWORD) =
 		  (BOOL (WINAPI *)(DWORD, DWORD, DWORD, DWORD, PDWORD))
 		  GetProcAddress (k32, "GetProductInfo");
-	  switch (osversion.dwMinorVersion)
+	  if (osversion.dwMajorVersion == 6)
+	    switch (osversion.dwMinorVersion)
+	      {
+	      case 0:
+		strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
+				? "Vista" : "2008");
+		break;
+	      case 1:
+		strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
+				? "7" : "2008 R2");
+		break;
+	      case 2:
+		strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
+				? "8" : "2012");
+		break;
+	      case 3:
+		strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
+				? "8.1" : "2012 R2");
+		break;
+	      case 4:
+	      default:
+		strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
+				? "10 Preview" : "2016 Preview");
+		break;
+	      }
+	  else if (osversion.dwMajorVersion == 10)
 	    {
-	    case 0:
 	      strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
-			      ? "Vista" : "2008");
-	      break;
-	    case 1:
-	      strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
-			      ? "7" : "2008 R2");
-	      break;
-	    case 2:
-	      strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
-			      ? "8" : "2012");
-	      break;
-	    case 3:
-	      strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
-			      ? "8.1" : "2012 R2");
-	      break;
-	    case 4:
-	    default:
-	      strcpy (osname, osversion.wProductType == VER_NT_WORKSTATION
-			      ? "10" : "2014");
-	      break;
+			      ? "10" : "2016");
 	    }
 	  DWORD prod;
 	  if (GetProductInfo (osversion.dwMajorVersion,
@@ -1596,16 +1519,46 @@ dump_sysinfo ()
  /* 0x0000005f */ " Storage Server Workgroup (Evaluation inst.)",
  /* 0x00000060 */ " Storage Server Standard (Evaluation inst.)",
  /* 0x00000061 */ "",
- /* 0x00000062 */ " N",			/* "8 N" */
- /* 0x00000063 */ " China",		/* "8 China" */
- /* 0x00000064 */ " Single Language",	/* "8 Single Language" */
- /* 0x00000065 */ "",			/* "8" */
+ /* 0x00000062 */ " N",
+ /* 0x00000063 */ " China",
+ /* 0x00000064 */ " Single Language",
+ /* 0x00000065 */ " Home",
  /* 0x00000066 */ "",
- /* 0x00000067 */ " Professional with Media Center"
+ /* 0x00000067 */ " Professional with Media Center",
+ /* 0x00000068 */ " Mobile",
+ /* 0x00000069 */ "",
+ /* 0x0000006a */ "",
+ /* 0x0000006b */ "",
+ /* 0x0000006c */ "",
+ /* 0x0000006d */ "",
+ /* 0x0000006e */ "",
+ /* 0x0000006f */ "",
+ /* 0x00000070 */ "",
+ /* 0x00000071 */ "",
+ /* 0x00000072 */ "",
+ /* 0x00000073 */ "",
+ /* 0x00000074 */ "",
+ /* 0x00000075 */ "",
+ /* 0x00000076 */ "",
+ /* 0x00000077 */ "",
+ /* 0x00000078 */ "",
+ /* 0x00000079 */ " Education",
+ /* 0x0000007a */ " Education N",
+ /* 0x0000007b */ "",
+ /* 0x0000007c */ "",
+ /* 0x0000007d */ "",
+ /* 0x0000007e */ "",
+ /* 0x0000007f */ "",
+ /* 0x00000080 */ "",
+ /* 0x00000081 */ "",
+ /* 0x00000082 */ "",
+ /* 0x00000083 */ "",
+ /* 0x00000084 */ "",
+ /* 0x00000085 */ " Mobile Enterprise",
 		};
 	      if (prod == PRODUCT_UNLICENSED)
 		strcat (osname, "Unlicensed");
-	      else if (prod > PRODUCT_PROFESSIONAL_WMC)
+	      else if (prod > 0x00000085)
 		strcat (osname, "");
 	      else
 		strcat (osname, products[prod]);
@@ -2190,9 +2143,6 @@ Usage: cygcheck [-v] [-h] PROGRAM\n\
        cygcheck -l [PACKAGE]...\n\
        cygcheck -p REGEXP\n\
        cygcheck --delete-orphaned-installation-keys\n\
-       cygcheck --enable-unique-object-names Cygwin-DLL\n\
-       cygcheck --disable-unique-object-names Cygwin-DLL\n\
-       cygcheck --show-unique-object-names Cygwin-DLL\n\
        cygcheck -h\n\n\
 List system information, check installed packages, or query package database.\n\
 \n\
@@ -2214,15 +2164,6 @@ At least one command option or a PROGRAM is required, as shown above.\n\
 		       Delete installation keys of old, now unused\n\
 		       installations from the registry.  Requires the right\n\
 		       to change the registry.\n\
-  --enable-unique-object-names Cygwin-DLL\n\
-  --disable-unique-object-names Cygwin-DLL\n\
-  --show-unique-object-names Cygwin-DLL\n\
-		       Enable, disable, or show the setting of the\n\
-		       \"unique object names\" setting in the Cygwin DLL\n\
-		       given as argument to this option.  The DLL path must\n\
-		       be given as valid Windows(!) path.\n\
-		       See the users guide for more information.\n\
-		       If you don't know what this means, don't change it.\n\
   -v, --verbose        produce more verbose output\n\
   -h, --help           annotate output with explanatory comments when given\n\
 		       with another command, otherwise print this help\n\
@@ -2246,9 +2187,6 @@ struct option longopts[] = {
   {"list-package", no_argument, NULL, 'l'},
   {"package-query", no_argument, NULL, 'p'},
   {"delete-orphaned-installation-keys", no_argument, NULL, CO_DELETE_KEYS},
-  {"enable-unique-object-names", no_argument, NULL, CO_ENABLE_UON},
-  {"disable-unique-object-names", no_argument, NULL, CO_DISABLE_UON},
-  {"show-unique-object-names", no_argument, NULL, CO_SHOW_UON},
   {"help", no_argument, NULL, 'h'},
   {"version", no_argument, 0, 'V'},
   {0, no_argument, NULL, 0}
@@ -2299,7 +2237,8 @@ load_cygwin (int& argc, char **&argv)
       char **av = (char **) cygwin_internal (CW_ARGV);
       if (av && ((uintptr_t) av != (uintptr_t) -1))
 	{
-	  /* Copy cygwin's idea of the argument list into this Window application. */
+	  /* Copy cygwin's idea of the argument list into this Window
+	     application. */
 	  for (argc = 0; av[argc]; argc++)
 	    continue;
 	  argv = (char **) calloc (argc + 1, sizeof (char *));
@@ -2311,8 +2250,8 @@ load_cygwin (int& argc, char **&argv)
       char **envp = (char **) cygwin_internal (CW_ENVP);
       if (envp && ((uintptr_t) envp != (uintptr_t) -1))
 	{
-	  /* Store path and revert to this value, otherwise path gets overwritten
-	     by the POSIXy Cygwin variation, which breaks cygcheck.
+	  /* Store path and revert to this value, otherwise path gets
+	     overwritten by the POSIXy Cygwin variation, which breaks cygcheck.
 	     Another approach would be to use the Cygwin PATH and convert it to
 	     Win32 again. */
 	  char *path = NULL;
@@ -2330,7 +2269,10 @@ load_cygwin (int& argc, char **&argv)
 	    putenv (path);
 	}
     }
-  FreeLibrary (h);
+  /* GDB chokes when the DLL got unloaded and, for some reason, fails to set
+     any breakpoint after the fact. */
+  if (!IsDebuggerPresent ())
+    FreeLibrary (h);
 }
 
 int
@@ -2381,11 +2323,6 @@ main (int argc, char **argv)
       case CO_DELETE_KEYS:
 	del_orphaned_reg = 1;
 	break;
-      case CO_ENABLE_UON:
-      case CO_DISABLE_UON:
-      case CO_SHOW_UON:
-	unique_object_name_opt = i;
-	break;
       case 'V':
 	print_version ();
 	exit (0);
@@ -2409,17 +2346,12 @@ main (int argc, char **argv)
     }
 
   if ((check_setup || sysinfo || find_package || list_package || grep_packages
-       || del_orphaned_reg || unique_object_name_opt)
+       || del_orphaned_reg)
       && keycheck)
     usage (stderr, 1);
 
   if ((find_package || list_package || grep_packages)
       && (check_setup || del_orphaned_reg))
-    usage (stderr, 1);
-
-  if ((check_setup || sysinfo || find_package || list_package || grep_packages
-       || del_orphaned_reg)
-      && unique_object_name_opt)
     usage (stderr, 1);
 
   if (dump_only && !check_setup && !sysinfo)
@@ -2430,8 +2362,6 @@ main (int argc, char **argv)
 
   if (keycheck)
     return check_keys ();
-  if (unique_object_name_opt)
-    return handle_unique_object_name (unique_object_name_opt, *argv);
   if (del_orphaned_reg)
     del_orphaned_reg_installations ();
   if (grep_packages)

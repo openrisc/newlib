@@ -7,6 +7,7 @@ INCLUDES = $(NEWLIB_CFLAGS) $(CROSS_CFLAGS) $(TARGET_CFLAGS)
 GENERAL_SOURCES = \
 	bcopy.c \
 	bzero.c \
+	explicit_bzero.c \
 	index.c \
 	memchr.c \
 	memcmp.c \
@@ -45,6 +46,8 @@ GENERAL_SOURCES = \
 	strxfrm.c  \
 	strstr.c \
 	swab.c \
+	timingsafe_bcmp.c \
+	timingsafe_memcmp.c \
 	u_strerr.c \
 	wcscat.c \
 	wcschr.c \
@@ -145,18 +148,4 @@ wcswidth.def	wcsxfrm.def	wcwidth.def	wmemchr.def \
 wmemcmp.def	wmemcpy.def	wmemmove.def	wmemset.def \
 memmem.def	memrchr.def	rawmemchr.def	strchrnul.def
 
-SUFFIXES = .def
-
-CHEW = ../../doc/makedoc -f $(srcdir)/../../doc/doc.str
-
-.c.def:
-	$(CHEW) < $< > $*.def 2> $*.ref
-	touch stmp-def
-
-TARGETDOC = ../tmp.texi
-
-doc: $(CHEWOUT_FILES)
-	cat $(srcdir)/strings.tex >> $(TARGETDOC)
-	cat $(srcdir)/wcstrings.tex >> $(TARGETDOC)
-
-CLEANFILES = $(CHEWOUT_FILES) *.ref
+CHAPTERS = strings.tex wcstrings.tex

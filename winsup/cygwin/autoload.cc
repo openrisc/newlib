@@ -254,11 +254,13 @@ noload:									\n\
 	addl	%eax,%esp	# Pop off bytes				\n\
 	andl	$0xffff0000,%eax# upper word				\n\
 	subl	%eax,%esp	# adjust for possible return value	\n\
-	pushl	%eax		# Save for later			\n\
+	pushl	%eax		# Save return value for later		\n\
+	pushl	%edx		# Save return address for later		\n\
 	movl	$127,%eax	# ERROR_PROC_NOT_FOUND			\n\
 	pushl	%eax		# First argument			\n\
 	call	_SetLastError@4	# Set it				\n\
-	popl	%eax		# Get back argument			\n\
+	popl	%edx		# Get back return address		\n\
+	popl	%eax		# Get back return value			\n\
 	sarl	$16,%eax	# return value in high order word	\n\
 	jmp	*%edx		# Return				\n\
 1:									\n\
@@ -330,21 +332,36 @@ union retchain
   two_addr_t ll;
 };
 
+/* This function handles the problem described here:
 
-/* This function is a workaround for the problem reported here:
+  http://www.microsoft.com/technet/security/advisory/2269637.mspx
+  https://msdn.microsoft.com/library/ff919712
+
+  It also contains a workaround for the problem reported here:
   http://cygwin.com/ml/cygwin/2011-02/msg00552.html
   and discussed here:
   http://cygwin.com/ml/cygwin-developers/2011-02/threads.html#00007
 
   To wit: winmm.dll calls FreeLibrary in its DllMain and that can result
-  in LoadLibraryExW returning an ERROR_INVALID_ADDRESS.  */
+  in LoadLibraryExW returning an ERROR_INVALID_ADDRESS. */
 static __inline bool
-dll_load (HANDLE& handle, WCHAR *name)
+dll_load (HANDLE& handle, PWCHAR name)
 {
-  HANDLE h = LoadLibraryW (name);
+  HANDLE h = NULL;
+  WCHAR dll_path[MAX_PATH];
+
+  /* If that failed, try loading with full path, which sometimes
+     fails for no good reason. */
+  wcpcpy (wcpcpy (dll_path, windows_system_directory), name);
+  h = LoadLibraryW (dll_path);
+  /* If that failed according to the second problem outlined in the
+     comment preceeding this function. */
   if (!h && handle && wincap.use_dont_resolve_hack ()
       && GetLastError () == ERROR_INVALID_ADDRESS)
-    h = LoadLibraryExW (name, NULL, DONT_RESOLVE_DLL_REFERENCES);
+    h = LoadLibraryExW (dll_path, NULL, DONT_RESOLVE_DLL_REFERENCES);
+  /* Last resort: Try loading just by name. */
+  if (!h)
+    h = LoadLibraryW (name);
   if (!h)
     return false;
   handle = h;
@@ -418,18 +435,15 @@ std_dll_init ()
     {
       fenv_t fpuenv;
       fegetenv (&fpuenv);
-      WCHAR dll_path[MAX_PATH];
       DWORD err = ERROR_SUCCESS;
       int i;
-      /* http://www.microsoft.com/technet/security/advisory/2269637.mspx */
-      wcpcpy (wcpcpy (dll_path, windows_system_directory), dll->name);
       /* MSDN seems to imply that LoadLibrary can fail mysteriously, so,
 	 since there have been reports of this in the mailing list, retry
 	 several times before giving up. */
       for (i = 1; i <= RETRY_COUNT; i++)
 	{
 	  /* If loading the library succeeds, just leave the loop. */
-	  if (dll_load (dll->handle, dll_path))
+	  if (dll_load (dll->handle, dll->name))
 	    break;
 	  /* Otherwise check error code returned by LoadLibrary.  If the
 	     error code is neither NOACCESS nor DLL_INIT_FAILED, break out
@@ -442,15 +456,10 @@ std_dll_init ()
 	}
       if ((uintptr_t) dll->handle <= 1)
 	{
-	  /* If LoadLibrary with full path returns one of the weird errors
-	     reported on the Cygwin mailing list, retry with only the DLL
-	     name.  Only do this when the above retry loop has been exhausted. */
-	  if (i > RETRY_COUNT && dll_load (dll->handle, dll->name))
-	    /* got it with the fallback */;
-	  else if ((func->decoration & 1))
+	  if ((func->decoration & 1))
 	    dll->handle = INVALID_HANDLE_VALUE;
 	  else
-	    api_fatal ("unable to load %W, %E", dll_path);
+	    api_fatal ("unable to load %W, %E", dll->name);
 	}
       fesetenv (&fpuenv);
     }
@@ -471,7 +480,6 @@ std_dll_init ()
 }
 
 /* Initialization function for winsock stuff. */
-WSADATA NO_COPY wsadata;
 
 #ifdef __x86_64__
 /* See above comment preceeding std_dll_init. */
@@ -484,6 +492,10 @@ __attribute__ ((used, noinline)) static two_addr_t
 wsock_init ()
 #endif
 {
+  /* CV 2016-03-09: Moved wsadata into wsock_init to workaround a problem
+     with the NO_COPY definition of wsadata and here starting with gcc-5.3.0.
+     See the git log for a description. */
+  static WSADATA NO_COPY wsadata;
   static LONG NO_COPY here = -1L;
 #ifndef __x86_64__
   struct func_info *func = (struct func_info *) __builtin_return_address (0);
@@ -505,7 +517,7 @@ wsock_init ()
 		   GetProcAddress ((HMODULE) (dll->handle), "WSAStartup");
       if (wsastartup)
 	{
-	  int res = wsastartup ((2<<8) | 2, &wsadata);
+	  int res = wsastartup (MAKEWORD (2, 2), &wsadata);
 
 	  debug_printf ("res %d", res);
 	  debug_printf ("wVersion %d", wsadata.wVersion);
@@ -564,8 +576,14 @@ LoadDLLfunc (RegisterEventSourceW, 8, advapi32)
 LoadDLLfunc (ReportEventW, 36, advapi32)
 LoadDLLfunc (SystemFunction036, 8, advapi32)	/* Aka "RtlGenRandom" */
 
+LoadDLLfunc (AuthzAccessCheck, 36, authz)
+LoadDLLfunc (AuthzFreeContext, 4, authz)
+LoadDLLfunc (AuthzInitializeContextFromSid, 32, authz)
+LoadDLLfunc (AuthzInitializeContextFromToken, 32, authz)
+LoadDLLfunc (AuthzInitializeResourceManager, 24, authz)
+
 LoadDLLfunc (DnsQuery_A, 24, dnsapi)
-LoadDLLfunc (DnsRecordListFree, 8, dnsapi)
+LoadDLLfunc (DnsFree, 8, dnsapi)
 
 LoadDLLfunc (GetAdaptersAddresses, 20, iphlpapi)
 LoadDLLfunc (GetIfEntry, 4, iphlpapi)
@@ -576,11 +594,15 @@ LoadDLLfunc (GetUdpTable, 12, iphlpapi)
 
 LoadDLLfuncEx (CancelSynchronousIo, 4, kernel32, 1)
 LoadDLLfunc (CreateSymbolicLinkW, 12, kernel32)
+LoadDLLfuncEx2 (DiscardVirtualMemory, 8, kernel32, 1, 127)
+LoadDLLfuncEx (GetLogicalProcessorInformationEx, 12, kernel32, 1)
 LoadDLLfuncEx (GetNamedPipeClientProcessId, 8, kernel32, 1)
 LoadDLLfunc (GetSystemTimePreciseAsFileTime, 4, kernel32)
 LoadDLLfuncEx (IdnToAscii, 20, kernel32, 1)
 LoadDLLfuncEx (IdnToUnicode, 20, kernel32, 1)
 LoadDLLfunc (LocaleNameToLCID, 8, kernel32)
+LoadDLLfuncEx (PrefetchVirtualMemory, 16, kernel32, 1)
+LoadDLLfunc (SetThreadGroupAffinity, 12, kernel32)
 LoadDLLfunc (SetThreadStackGuarantee, 4, kernel32)
 
 /* ldap functions are cdecl! */

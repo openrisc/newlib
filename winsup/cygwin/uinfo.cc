@@ -56,7 +56,7 @@ cygheap_user::init ()
   if (GetEnvironmentVariableW (L"USERNAME", user_name, user_name_len)
       || GetEnvironmentVariableW (L"USER", user_name, user_name_len))
     {
-      char mb_user_name[user_name_len = sys_wcstombs (NULL, 0, user_name)];
+      char mb_user_name[user_name_len = sys_wcstombs (NULL, 0, user_name) + 1];
       sys_wcstombs (mb_user_name, user_name_len, user_name);
       set_name (mb_user_name);
     }
@@ -113,6 +113,38 @@ cygheap_user::init ()
     system_printf("Cannot get dacl, %E");
 }
 
+/* Check if sid is an enabled SID in the token group list of the current
+   effective token.  Note that we only check for ENABLED groups, not for
+   INTEGRITY_ENABLED.  The latter just doesn't make sense in our scenario
+   of using the group as primary group.
+
+   This needs careful checking should we use check_token_membership in other
+   circumstances. */
+static bool
+check_token_membership (PSID sid)
+{
+  NTSTATUS status;
+  ULONG size;
+  tmp_pathbuf tp;
+  PTOKEN_GROUPS groups = (PTOKEN_GROUPS) tp.w_get ();
+
+  /* If impersonated, use impersonation token. */
+  HANDLE tok = cygheap->user.issetuid () ? cygheap->user.primary_token ()
+					 : hProcToken;
+  status = NtQueryInformationToken (tok, TokenGroups, groups, 2 * NT_MAX_PATH,
+				    &size);
+  if (!NT_SUCCESS (status))
+    debug_printf ("NtQueryInformationToken (TokenGroups) %y", status);
+  else
+    {
+      for (DWORD pg = 0; pg < groups->GroupCount; ++pg)
+	if (RtlEqualSid (sid, groups->Groups[pg].Sid)
+	    && (groups->Groups[pg].Attributes & SE_GROUP_ENABLED))
+	  return true;
+    }
+  return false;
+}
+
 void
 internal_getlogin (cygheap_user &user)
 {
@@ -148,16 +180,23 @@ internal_getlogin (cygheap_user &user)
 		 disagree with gr_gid from the group file.  Overwrite it. */
 	      if ((grp2 = internal_getgrsid (gsid, &cldap)) && grp2 != grp)
 		myself->gid = pwd->pw_gid = grp2->gr_gid;
-	      /* Set primary group to the group in /etc/passwd. */
+	      /* Set primary group to the group in /etc/passwd, *iff*
+		 the group in /etc/passwd is in the token *and* enabled. */
 	      if (gsid != user.groups.pgsid)
 		{
-		  NTSTATUS status = NtSetInformationToken (hProcToken,
-							   TokenPrimaryGroup,
-							   &gsid, sizeof gsid);
+		  NTSTATUS status = STATUS_INVALID_PARAMETER;
+
+		  if (check_token_membership (gsid))
+		    {
+		      status = NtSetInformationToken (hProcToken,
+						      TokenPrimaryGroup,
+						      &gsid, sizeof gsid);
+		      if (!NT_SUCCESS (status))
+			debug_printf ("NtSetInformationToken "
+				      "(TokenPrimaryGroup), %y", status);
+		    }
 		  if (!NT_SUCCESS (status))
 		    {
-		      debug_printf ("NtSetInformationToken (TokenPrimaryGroup),"
-				    " %y", status);
 		      /* Revert the primary group setting and override the
 			 setting in the passwd entry. */
 		      if (pgrp)
@@ -331,14 +370,7 @@ cygheap_user::ontherange (homebodies what, struct passwd *pw)
       char *p;
 
       if ((p = getenv ("HOME")))
-	{
-	  debug_printf ("HOME is already in the environment %s", p);
-	  if (p[0] != '/')
-	    {
-	      p = NULL;
-	      debug_printf ("discard HOME, no absolute POSIX path");
-	    }
-	}
+	debug_printf ("HOME is already in the environment %s", p);
       if (!p)
 	{
 	  if (pw && pw->pw_dir && *pw->pw_dir)
@@ -1469,12 +1501,12 @@ get_logon_sid ()
       NTSTATUS status;
       ULONG size;
       tmp_pathbuf tp;
-      PTOKEN_GROUPS groups = (PTOKEN_GROUPS) tp.c_get ();
+      PTOKEN_GROUPS groups = (PTOKEN_GROUPS) tp.w_get ();
 
       status = NtQueryInformationToken (hProcToken, TokenGroups, groups,
-					NT_MAX_PATH, &size);
+					2 * NT_MAX_PATH, &size);
       if (!NT_SUCCESS (status))
-	debug_printf ("NtQueryInformationToken() %y", status);
+	debug_printf ("NtQueryInformationToken (TokenGroups) %y", status);
       else
 	{
 	  for (DWORD pg = 0; pg < groups->GroupCount; ++pg)
@@ -1959,11 +1991,11 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
 	 We create uid/gid values compatible with the old values generated
 	 by mkpasswd/mkgroup. */
       if (arg.id < 0x200)
-	__small_swprintf (sidstr, L"S-1-5-%u", arg.id & 0x1ff);
+	csid.create (5, 1, arg.id & 0x1ff);
+      else if (arg.id <= 0x3e7)
+	csid.create (5, 2, 32, arg.id & 0x3ff);
       else if (arg.id == 0x3e8) /* Special case "Other Organization" */
-	wcpcpy (sidstr, L"S-1-5-1000");
-      else if (arg.id <= 0x7ff)
-	__small_swprintf (sidstr, L"S-1-5-32-%u", arg.id & 0x7ff);
+	csid.create (5, 1, 1000);
       else
 #endif
       if (arg.id == 0xffe)
@@ -1995,32 +2027,30 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
 	  arg.id -= 0x10000;
 	  /* SECURITY_APP_PACKAGE_AUTHORITY */
 	  if (arg.id >= 0xf20 && arg.id <= 0xf3f)
-	    __small_swprintf (sidstr, L"S-1-15-%u-%u", (arg.id >> 4) & 0xf,
-						       arg.id & 0xf);
+	    csid.create (15, 2, (arg.id >> 4) & 0xf, arg.id & 0xf);
 	  else
-	    __small_swprintf (sidstr, L"S-1-%u-%u", arg.id >> 8, arg.id & 0xff);
+	    csid.create (arg.id >> 8, 1, arg.id & 0xff);
 	}
       else if (arg.id >= 0x30000 && arg.id < 0x40000)
 	{
 	  /* Account domain user or group. */
-	  PWCHAR s = cygheap->dom.account_sid ().pstring (sidstr);
-	  __small_swprintf (s, L"-%u", arg.id & 0xffff);
+	  csid = cygheap->dom.account_sid ();
+	  csid.append (arg.id & 0xffff);
 	}
       else if (arg.id < 0x60000)
 	{
 	  /* Builtin Alias */
-	  __small_swprintf (sidstr, L"S-1-5-%u-%u",
-			    arg.id >> 12, arg.id & 0xffff);
+	  csid.create (5, 2, arg.id >> 12, arg.id & 0xffff);
 	}
       else if (arg.id < 0x70000)
 	{
 	  /* Mandatory Label. */
-	  __small_swprintf (sidstr, L"S-1-16-%u", arg.id & 0xffff);
+	  csid.create (16, 1, arg.id & 0xffff);
 	}
       else if (arg.id < 0x80000)
 	{
 	  /* Identity assertion SIDs. */
-	  __small_swprintf (sidstr, L"S-1-18-%u", arg.id & 0xffff);
+	  csid.create (18, 1, arg.id & 0xffff);
 	}
       else if (arg.id < PRIMARY_POSIX_OFFSET)
 	{
@@ -2031,16 +2061,15 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
       else if (arg.id == ILLEGAL_UID)
 	{
 	  /* Just some fake. */
-	  sid = csid = "S-1-99-0";
+	  sid = csid.create (99, 1, 0);
 	  break;
 	}
       else if (arg.id >= UNIX_POSIX_OFFSET)
 	{
 	  /* UNIX (unknown NFS or Samba) user account. */
-	  __small_swprintf (sidstr, L"S-1-22-%u-%u",
-			    is_group () ? 2 : 1,  arg.id & UNIX_POSIX_MASK);
+	  csid.create (22, 2, is_group () ? 2 : 1,  arg.id & UNIX_POSIX_MASK);
 	  /* LookupAccountSidW will fail. */
-	  sid = csid = sidstr;
+	  sid = csid;
 	  break;
 	}
       else
@@ -2056,23 +2085,22 @@ pwdgrp::fetch_account_from_windows (fetch_user_arg_t &arg, cyg_ldap *pldap)
 	    }
 	  if (this_td)
 	    {
-	      cygpsid tsid (this_td->DomainSid);
-	      PWCHAR s = tsid.pstring (sidstr);
-	      __small_swprintf (s, L"-%u", arg.id - posix_offset);
+	      csid = this_td->DomainSid;
+	      csid.append (arg.id - posix_offset);
 	    }
 	  else
 	    {
 	      /* Primary domain */
-	      PWCHAR s = cygheap->dom.primary_sid ().pstring (sidstr);
-	      __small_swprintf (s, L"-%u", arg.id - PRIMARY_POSIX_OFFSET);
+	      csid = cygheap->dom.primary_sid ();
+	      csid.append (arg.id - PRIMARY_POSIX_OFFSET);
 	    }
 	  posix_offset = 0;
 	}
-      sid = csid = sidstr;
+      sid = csid;
       ret = LookupAccountSidW (NULL, sid, name, &nlen, dom, &dlen, &acc_type);
       if (!ret)
 	{
-	  debug_printf ("LookupAccountSidW (%W), %E", sidstr);
+	  debug_printf ("LookupAccountSidW (%W), %E", sid.string (sidstr));
 	  return NULL;
 	}
       break;

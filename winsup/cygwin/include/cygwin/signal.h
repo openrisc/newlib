@@ -188,7 +188,7 @@ struct _sigcommune
   __extension__ union
   {
     int _si_fd;
-    void *_si_pipe_fhandler;
+    int64_t _si_pipe_unique_id;
     char *_si_str;
   };
 };
@@ -315,14 +315,6 @@ enum
 #define SIGEV_NONE   SIGEV_NONE
 #define SIGEV_THREAD SIGEV_THREAD
 
-#if __WORDSIZE == 64
-typedef __uint64_t sigset_t;
-#else
-/* FIXME: We should probably raise the # of signals for 32 bit as well.
-          Unfortunately this is an ABI change so requires some forethought. */
-typedef __uint32_t sigset_t;
-#endif
-
 typedef void (*_sig_func_ptr)(int);
 
 struct sigaction
@@ -366,6 +358,7 @@ struct sigaction
 #define	SIGILL	4	/* illegal instruction (not reset when caught) */
 #define	SIGTRAP	5	/* trace trap (not reset when caught) */
 #define	SIGABRT 6	/* used by abort */
+#define	SIGIOT	SIGABRT	/* synonym for SIGABRT on most systems */
 #define	SIGEMT	7	/* EMT instruction */
 #define	SIGFPE	8	/* floating point exception */
 #define	SIGKILL	9	/* kill (cannot be caught or ignored) */

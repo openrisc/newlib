@@ -78,7 +78,7 @@ cd ..
 
 echo "++ build gdb"
 mkdir build-gdb; cd build-gdb
-eval ../gdb/configure --target=or1k-elf --prefix=$PREFIX --disable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --disable-sim --disable-or1ksim --with-sysroot --disable-newlib --disable-libgloss --disable-gas --disable-ld --disable-binutils --disable-gprof --with-system-zlib $LOG
+eval ../gdb/configure --target=or1k-elf --prefix=$PREFIX --disable-shared --disable-itcl --disable-tk --disable-tcl --disable-winsup --disable-gdbtk --disable-libgui --disable-rda --disable-sid --with-sysroot --disable-newlib --disable-libgloss --disable-gas --disable-ld --disable-binutils --disable-gprof --with-system-zlib $LOG
 eval make $JOBS $LOG
 eval make install $LOG
 cd ..

@@ -36,7 +36,6 @@
       the obvious things..                                                    */
 /* -------------------------------------------------------------------------- */
 
-#include "newlib.h"
 #include "include/or1k-asm.h"
 #include "include/or1k-sprs.h"
 
@@ -96,11 +95,6 @@ _or1k_exception_stack_size:	.word EXCEPTION_STACK_SIZE
   Load NPC into r3, EPCR into r4
                                                                               */
 /* -------------------------------------------------------------------------- */
-
-#ifdef HAVE_INITFINI_ARRAY
-#define _init	__libc_init_array
-#define _fini	__libc_fini_array
-#endif
 
 #define GPR_BUF_OFFSET(x) (x << 2)
 

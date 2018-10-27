@@ -19,6 +19,7 @@
 
 #include "fdlibm.h"
 #include <errno.h>
+#include <ieeefp.h>
 
 #ifdef __STDC__
 	float powf(float x, float y)	/* wrapper powf */
@@ -33,8 +34,8 @@
 	float z;
 	struct exception exc;
 	z=__ieee754_powf(x,y);
-	if(_LIB_VERSION == _IEEE_|| isnan(y)) return z;
-	if(isnan(x)) {
+	if(_LIB_VERSION == _IEEE_|| isnanf(y)) return z;
+	if(isnanf(x)) {
 	    if(y==(float)0.0) { 
 		/* powf(NaN,0.0) */
 		/* error only if _LIB_VERSION == _SVID_ & _XOPEN_ */
@@ -97,7 +98,7 @@
 	}
 	if(!finitef(z)) {
 	    if(finitef(x)&&finitef(y)) {
-	        if(isnan(z)) {
+	        if(isnanf(z)) {
 		    /* neg**non-integral */
 		    exc.type = DOMAIN;
 		    exc.name = "powf";

@@ -19,6 +19,7 @@
 
 #include "fdlibm.h"
 #include <errno.h>
+#include <ieeefp.h>
 
 #ifdef __STDC__
 	float logf(float x)		/* wrapper logf */
@@ -33,7 +34,7 @@
 	float z;
 	struct exception exc;
 	z = __ieee754_logf(x);
-	if(_LIB_VERSION == _IEEE_ || isnan(x) || x > (float)0.0) return z;
+	if(_LIB_VERSION == _IEEE_ || isnanf(x) || x > (float)0.0) return z;
 #ifndef HUGE_VAL 
 #define HUGE_VAL inf
 	double inf = 0.0;

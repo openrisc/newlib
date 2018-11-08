@@ -19,6 +19,7 @@
 
 #include "fdlibm.h"
 #include <errno.h>
+#include <ieeefp.h>
 
 #ifdef __STDC__
 	float j0f(float x)		/* wrapper j0f */
@@ -32,7 +33,7 @@
 #else
 	struct exception exc;
 	float z = __ieee754_j0f(x);
-	if(_LIB_VERSION == _IEEE_ || isnan(x)) return z;
+	if(_LIB_VERSION == _IEEE_ || isnanf(x)) return z;
 	if(fabsf(x)>(float)X_TLOSS) {
 	    /* j0f(|x|>X_TLOSS) */
             exc.type = TLOSS;
@@ -66,7 +67,7 @@
 	float z;
 	struct exception exc;
 	z = __ieee754_y0f(x);
-	if(_LIB_VERSION == _IEEE_ || isnan(x) ) return z;
+	if(_LIB_VERSION == _IEEE_ || isnanf(x) ) return z;
         if(x <= (float)0.0){
 #ifndef HUGE_VAL 
 #define HUGE_VAL inf

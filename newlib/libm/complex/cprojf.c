@@ -37,6 +37,8 @@
 
 #include "../common/fdlibm.h"
 
+#include <ieeefp.h>
+
 /*
  * cprojf(float complex z)
  *
@@ -55,7 +57,7 @@ cprojf(float complex z)
 {
 	float_complex w = { .z = z };
 
-	if (isinf(crealf(z)) || isinf(cimagf(z))) {
+	if (isinff(crealf(z)) || isinff(cimagf(z))) {
 #ifdef __INFINITY
 		REAL_PART(w) = __INFINITY;
 #else

@@ -1,0 +1,35 @@
+# Run in container-based environment
+sudo: false
+
+# Install the build requirements
+addons:
+  apt:
+    packages:
+    - build-essential
+    - libgmp-dev
+    - libmpfr-dev
+    - libmpc-dev
+    - zlib1g-dev
+    - texinfo
+    - flex
+    - bison
+
+# The checkout is the test we run here
+# The matrix are the two build variants
+env:
+  global:
+   - NEWLIB_CHECKOUT=$TRAVIS_BUILD_DIR
+   - LOG_REDIRECT=build.log
+  matrix:
+   - PREFIX=/tmp/or1k-elf
+   - PREFIX=/tmp/or1k-elf BUILD_MULTICORE=1
+
+# Create a build folder and checkout the build scripts
+before_install:
+  - cd $HOME
+  - mkdir build-or1k-elf && cd build-or1k-elf
+  - git clone -b scripts https://github.com/openrisc/newlib .
+
+# Execute the build
+script:
+  - ./build.sh

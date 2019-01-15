@@ -46,7 +46,7 @@ prefix, such as <tt>/opt/toolchains/or1k-elf-multicore</tt> and you need
 to build newlib with the environment
 variable <tt>CFLAGS="-D__OR1K_MULTICORE__"</tt>:</p>
 
-<pre><code>../newlib/configure --target=or1k-elf --prefix=$PREFIX CFLAGS="-D__OR1K_MULTICORE__"
+<pre><code>../newlib/configure --target=or1k-elf --prefix=$PREFIX CFLAGS_FOR_TARGET="-D__OR1K_MULTICORE__"
 </code></pre>
 
 

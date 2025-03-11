@@ -41,4 +41,7 @@ TAGS.sub
 core
 !core/
 
+# ignore generated jekyll files
+_site/
+
 lost+found

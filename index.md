@@ -62,12 +62,14 @@ some basic examples is also available
 You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
 different components that are preferably installed
-to `/opt/toolchains/or1k-elf`. You can find all
-releases <a href="https://github.com/openrisc/newlib/releases">here</a>. Those
-are current releases:
+to `/opt/toolchains/or1k-elf`. You can find releases in the following locations:
 
- * <a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf_gcc4.9.3_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11
- * <a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf_gcc5.2.0_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC 5.2.0, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11
+ * [openrisc/newlib/releases](https://github.com/openrisc/newlib/releases) Older
+   releases from the OpenRISC community last published in May 2016. Used the
+   old non-upstreamed gcc port.
+ * [Embecosm OpenRISC toolchain top-of-tree](https://embecosm.com/downloads/tool-chain-downloads/#openrisc-top-of-tree-compilers) Embecosm
+   produced toolchain builds up until 2023.  Unforthunately this effort stopped.
+ * [openrisc/or1k-gcc/releases](https://github.com/openrisc/or1k-gcc/releases) The latest releases from OpenRISC.
 
 After downloading a release you can extract it anywhere in your
 filesystem, we recommend to `/opt/toolchains/or1k-elf/`. You need to add

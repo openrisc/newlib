@@ -26,9 +26,8 @@ You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
 different components that are preferably installed
 to `/opt/toolchains/or1k-elf-multicore` or `/opt/toolchains/or1k-elf`.
-You can find all releases
-<a href="https://github.com/openrisc/newlib/releases">here</a>. Those
-are current releases:</p>
+You can find some older multicore releases
+<a href="https://github.com/openrisc/newlib/releases">here</a>. The last ones being:</p>
 
  * <a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf-multicore_gcc4.9.3_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC 4.9.2, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11
  * <a href="https://github.com/openrisc/newlib/releases/download/v2.3.0-1/or1k-elf-multicore_gcc5.2.0_binutils2.26_newlib2.3.0-1_gdb7.11.tgz">GCC 5.2.0, Binutils 2.26, Newlib 2.3.0 (+or1k backports), GDB 7.11

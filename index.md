@@ -62,14 +62,10 @@ some basic examples is also available
 You can install pre-compiled toolchains and install them on your
 Linux system. We have prebuilt-toolchains for releases of the
 different components that are preferably installed
-to `/opt/toolchains/or1k-elf`. You can find releases in the following locations:
+to `/opt/toolchains/or1k-elf`. You can find releases at:
 
- * [openrisc/newlib/releases](https://github.com/openrisc/newlib/releases) Older
-   releases from the OpenRISC community last published in May 2016. Used the
-   old non-upstreamed gcc port.
- * [Embecosm OpenRISC toolchain top-of-tree](https://embecosm.com/downloads/tool-chain-downloads/#openrisc-top-of-tree-compilers) Embecosm
-   produced toolchain builds up until 2023.  Unforthunately this effort stopped.
- * [openrisc/or1k-gcc/releases](https://github.com/openrisc/or1k-gcc/releases) The latest releases from OpenRISC.
+ * [or1k-toolchain-build/Releases](https://github.com/stffrdhrn/or1k-toolchain-build/releases) Latest
+   OpenRISC toolchain releases.
 
 After downloading a release you can extract it anywhere in your
 filesystem, we recommend to `/opt/toolchains/or1k-elf/`. You need to add
@@ -78,13 +74,12 @@ the toolchain to your path:
 ```
 export PATH=/opt/toolchains/or1k-elf/bin:${PATH}
 ```
+#### Historical releases.
 
-### Development Build status
+ * [openrisc/newlib/releases](https://github.com/openrisc/newlib/releases) Older
+   releases from the OpenRISC community last published in May 2016. Used the
+   old non-upstreamed gcc port.
+ * [Embecosm OpenRISC toolchain top-of-tree](https://embecosm.com/downloads/tool-chain-downloads/#openrisc-top-of-tree-compilers) Embecosm
+   produced toolchain builds up until 2023.  Unforthunately this effort stopped.
+ * [openrisc/or1k-gcc/releases](https://github.com/openrisc/or1k-gcc/releases) Older development releases from OpenRISC.
 
-Whenever something is pushed to the newlib repository, the current
-development versions of Binutils, GCC, (or1k) Newlib and GDB are
-automatically build
-at <a href="https://travis-ci.org/openrisc/newlib">Travis CI</a>.
-
-Current build
-status: <a href="https://travis-ci.org/openrisc/newlib"><img src="https://travis-ci.org/openrisc/newlib.svg?branch=or1k"></a>

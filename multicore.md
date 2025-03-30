@@ -29,7 +29,7 @@ to `/opt/toolchains/or1k-nonemc-elf`.
 You can find some older multicore releases
 <a href="https://github.com/stffrdhrn/or1k-toolchain-build/releases">here</a>. The latest ones being:</p>
 
- * [GCC 14.2.0, newlib 4.5.0, binutils 2.43.1](https://github.com/stffrdhrn/or1k-toolchain-build/releases/download/or1k-14.2.0-20250329/or1k-nonemc-elf-14.2.0-20250329.tar.xz]
+ * [GCC 14.2.0, newlib 4.5.0, binutils 2.43.1](https://github.com/stffrdhrn/or1k-toolchain-build/releases/download/or1k-14.2.0-20250329/or1k-nonemc-elf-14.2.0-20250329.tar.xz)
 
 After downloading a release you can extract it anywhere in your
 filesystem, preferable to `/opt/toolchains/or1k-nonemc-elf/`. You need to add

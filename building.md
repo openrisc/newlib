@@ -168,7 +168,7 @@ architecture:
 
 ```
 mkdir build-gdb; cd build-gdb
-../gdb/configure --target=or1k-elf \
+../binutils-gdb/configure --target=or1k-elf \
     --prefix=$PREFIX \
     --disable-itcl \
     --disable-tk \

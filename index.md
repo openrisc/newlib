@@ -46,7 +46,7 @@ list with `or1k-elf-gcc --target-help`:
  * `-msoft-div` compiles with software emulation of divide operations
  * `-msoft-mul` compiles with software emulation of multiply operations
 
-### or1k support extensions<
+### or1k support extensions
 
 The `libgloss`, which is an essential part of a newlib-based
 cross-compiler contains some additional code to support baremetal

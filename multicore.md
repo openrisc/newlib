@@ -23,16 +23,12 @@ variable `CFLAGS="-D__OR1K_MULTICORE__"`:
 ## Pre-Compiled Toolchain
 
 You can install pre-compiled toolchains and install them on your
-Linux system. We have prebuilt-toolchains for releases of the
-different components that are preferably installed
-to `/opt/toolchains/or1k-nonemc-elf`.
-You can find some older multicore releases
-<a href="https://github.com/stffrdhrn/or1k-toolchain-build/releases">here</a>. The latest ones being:</p>
-
- * [GCC 14.2.0, newlib 4.5.0, binutils 2.43.1](https://github.com/stffrdhrn/or1k-toolchain-build/releases/download/or1k-14.2.0-20250329/or1k-nonemc-elf-14.2.0-20250329.tar.xz)
+Linux system. We have prebuilt-toolchains
+available from the OpenRISC [toolchain releases](https://github.com/stffrdhrn/or1k-toolchain-build/releases)
+repo.
 
 After downloading a release you can extract it anywhere in your
-filesystem, preferable to `/opt/toolchains/or1k-nonemc-elf/`. You need to add
+filesystem, preferable to `/opt/toolchains/or1k-nonemc-elf/`. After extracing add
 the toolchain to your path:
 
 ```
